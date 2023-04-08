@@ -85,6 +85,19 @@ const DATA = [
   {id: '3', label: 'Heath App'},
   {id: '4', label: 'Mobile'},
 ];
+
+const SideDrawer = ({onClose}) => {
+  return (
+    <View style={styles.container}>
+      <Text>Navigation Link 1</Text>
+      <Text>Navigation Link 2</Text>
+      <Text>User Profile Information</Text>
+      <TouchableHighlight onPress={onClose}>
+        <Text>Close Drawer</Text>
+      </TouchableHighlight>
+    </View>
+  );
+};
 const App = ({navigation}) => {
   const [selected, setSelected] = useState([]);
 
@@ -236,11 +249,19 @@ const App = ({navigation}) => {
                   height: 50,
                   borderRadius: 5,
                   justifyContent: 'center',
+
                   alignItems: 'center',
                   width: '80%',
                   marginTop: 10,
                 }}>
-                <Text style={{color: '#fff', fontSize: 17}}>Show Results</Text>
+                <Text
+                  style={{
+                    color: '#fff',
+                    fontSize: 17,
+                    fontFamily: 'Poppins-Regular',
+                  }}>
+                  Show Results
+                </Text>
               </TouchableOpacity>
               <Text
                 style={[
@@ -285,8 +306,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     marginTop: 25,
     marginBottom: 15,
-    fontSize: 24,
-    fontWeight: '600',
+    fontSize: 23,
+    fontFamily: 'Poppins-SemiBold',
     color: 'grey',
   },
   itemContainer: {

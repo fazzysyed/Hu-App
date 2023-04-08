@@ -18,7 +18,10 @@ const Button = ({onPress, title, disabled, loading, color, font, width}) => {
       onPress={onPress}
       style={[
         styles.container,
-        {backgroundColor: color ? color : 'red', width: width ? width : '95%'},
+        {
+          backgroundColor: color ? color : '#1C75BC',
+          width: width ? width : '95%',
+        },
       ]}>
       {loading ? (
         <ActivityIndicator color={'#FFFFFF'} />
@@ -34,7 +37,7 @@ export default Button;
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: hp(4),
+    marginTop: hp(2),
     borderRadius: hp(1),
     paddingVertical: hp(2),
 
@@ -46,7 +49,7 @@ const styles = StyleSheet.create({
     fontSize: hp(2),
     color: '#FFFFFF',
     elevation: 2,
-    // fontFamily: 'Poppins-Regular',
+    fontFamily: 'Poppins-Regular',
     textAlign: 'center',
   },
 });

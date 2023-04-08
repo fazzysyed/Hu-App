@@ -1,0 +1,51 @@
+export const WEEK_DAYS = [
+  {
+    day: 'Sun',
+    name: 'Sunday',
+    id: '3',
+    toTime: '',
+    fromTime: '',
+  },
+  {
+    day: 'Mon',
+    name: 'Monday',
+    toTime: '',
+    fromTime: '',
+    id: '4',
+  },
+  {
+    day: 'Tues',
+    name: 'Tuesday',
+    toTime: '',
+    fromTime: '',
+    id: '5',
+  },
+  {
+    day: 'Wed',
+    name: 'Wednesday',
+    toTime: '',
+    fromTime: '',
+    id: '6',
+  },
+  {
+    day: 'Thu',
+    name: 'Thursday',
+    toTime: '',
+    fromTime: '',
+    id: '7',
+  },
+  {
+    day: 'Fri',
+    name: 'Friday',
+    toTime: '',
+    fromTime: '',
+    id: '1',
+  },
+  {
+    day: 'Sat',
+    name: 'Saturday',
+    toTime: '',
+    fromTime: '',
+    id: '2',
+  },
+];
