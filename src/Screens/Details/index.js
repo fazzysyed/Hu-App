@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -122,12 +122,16 @@ const DATA = [
   {id: '3', label: 'Heath App'},
   {id: '4', label: 'Mobile'},
 ];
-const App = ({navigation}) => {
+const App = ({navigation, route}) => {
+  const {proId} = route.params;
   const [selected, setSelected] = useState([]);
   const [index, setIndex] = useState('Hours');
   const [scroll, setScroll] = useState(false);
+  const [pro,setPro] = useState(null)
 
   const [routes, setRoutes] = React.useState([
+    // {key: 'first1', title: 'Licenses'},
+
     {key: 'first', title: 'Hours'},
     {key: 'second', title: 'Schedule'},
     {
@@ -135,6 +139,23 @@ const App = ({navigation}) => {
       title: 'Reviews',
     },
   ]);
+
+
+  useEffect(()=>{
+    handleAPIRequest('get', '`${}`', null)
+    .then(response => {
+      if (response) {
+        dispatch(getAllPros(response));
+        // AsyncStorage.setItem('User', JSON.stringify(response.user));
+      }
+
+      console.log(profressionals, 'fafajfeyyfe');
+    })
+    .catch(e => {
+      console.log(e);
+    });
+
+  },[])
 
   const handlePress = id => {
     setSelected(prevState => {
@@ -289,7 +310,7 @@ const App = ({navigation}) => {
                   flexDirection: 'row',
                   justifyContent: 'center',
                   borderBottomWidth: index === route.title ? 2 : 0,
-                  width: Dimensions.get('window').width / 3.2,
+                  width: Dimensions.get('window').width / 4,
                   borderBottomColor:
                     index === route.title ? '#1C75BC' : 'white',
                   alignItems: 'center',

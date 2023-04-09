@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,10 @@ import HomeSearch from '../../components/Search';
 import CustomLabel from '../../components/Label';
 import Pill from '../../components/Pills';
 import Button from '../../components/Button';
+import {handleAPIRequest} from '../../Helper/ApiHandler';
+import axios from 'axios';
+import {useDispatch, useSelector} from 'react-redux';
+import {getAllPros} from '../../Store/Actions/Actions';
 
 const data = {
   uuid: 'b94a089b-6779-47a7-b5e4-9096c78392f3',
@@ -86,20 +90,25 @@ const DATA = [
   {id: '4', label: 'Mobile'},
 ];
 
-const SideDrawer = ({onClose}) => {
-  return (
-    <View style={styles.container}>
-      <Text>Navigation Link 1</Text>
-      <Text>Navigation Link 2</Text>
-      <Text>User Profile Information</Text>
-      <TouchableHighlight onPress={onClose}>
-        <Text>Close Drawer</Text>
-      </TouchableHighlight>
-    </View>
-  );
-};
 const App = ({navigation}) => {
   const [selected, setSelected] = useState([]);
+  const dispatch = useDispatch();
+  const profressionals = useSelector(state => state.Reducer.pros);
+
+  useEffect(() => {
+    handleAPIRequest('get', 'pros', null)
+      .then(response => {
+        if (response) {
+          dispatch(getAllPros(response));
+          // AsyncStorage.setItem('User', JSON.stringify(response.user));
+        }
+
+        console.log(profressionals, 'fafajfeyyfe');
+      })
+      .catch(e => {
+        console.log(e);
+      });
+  }, []);
 
   const handlePress = id => {
     setSelected(prevState => {
@@ -146,33 +155,57 @@ const App = ({navigation}) => {
 
         <View style={{marginTop: 40}}>
           <FlatList
-            data={data}
+            data={profressionals}
+            showsVerticalScrollIndicator={false}
             renderItem={({item}) => (
-              <TouchableOpacity
-                style={styles.itemContainer}
-                onPress={() => navigation.navigate('Details')}>
-                <View style={styles.imageContainer}>
-                  <Image
-                    style={styles.image}
-                    source={require('../../assets/images/pro.png')}
-                  />
-                </View>
-                <View style={styles.details}>
-                  <Text style={styles.name}>Mathew Bryant</Text>
-                  <Text style={styles.address}>Address Here</Text>
-                  <Text style={styles.rates}>$10/Hour</Text>
-                  <Text style={styles.rates}>$100/Daily</Text>
-                </View>
-                <View style={styles.lastContainer}>
-                  <View style={styles.status}>
-                    <Icon name="verified" color={'#FFFFFF'} size={17} />
-                  </View>
-                  <View style={styles.ratingContainer}>
-                    <Text style={styles.rating}>4.3</Text>
-                    <Star name="star" color={'#ffe234'} size={20} />
-                  </View>
-                </View>
-              </TouchableOpacity>
+              <View style={{borderWidth: 1, borderRadius: 5}}>
+                <View style={styles.triangle} />
+              </View>
+              // <TouchableOpacity
+              //   style={styles.itemContainer}
+              //   onPress={() =>
+              //     navigation.navigate('Details', {
+              //       proId: item.uuid,
+              //     })
+              //   }>
+              //   <Image
+              //     style={styles.image}
+              //     source={
+              //       item.photo_url
+              //         ? item.photo_url
+              //         : require('../../assets/images/pro.png')
+              //     }
+              //   />
+
+              //   <View style={styles.details}>
+              //     <Text style={styles.name}>
+              //       {item.firstname} {item.lastname}
+              //     </Text>
+              //     <Text style={styles.address}>Address Here</Text>
+              //     <Text style={styles.rates}>
+              //       ${item.pro_profile ? item.pro_profile.hourly_rate : '0'}
+              //       /Hour
+              //     </Text>
+              //     <Text style={styles.rates}>
+              //       ${item.pro_profile ? item.pro_profile.daily_rate : '0'}
+              //       /Daily
+              //     </Text>
+              //   </View>
+              //   <View style={styles.lastContainer}>
+              //     {item.verified === 'yes' ? (
+              //       <View style={styles.status}>
+              //         <Icon name="verified" color={'#FFFFFF'} size={17} />
+              //       </View>
+              //     ) : (
+              //       <View />
+              //     )}
+
+              //     <View style={styles.ratingContainer}>
+              //       <Text style={styles.rating}>4.3</Text>
+              //       <Star name="star" color={'#ffe234'} size={20} />
+              //     </View>
+              //   </View>
+              // </TouchableOpacity>
             )}
           />
         </View>
@@ -316,45 +349,52 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     borderRadius: 10,
     marginHorizontal: 10,
-    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // flexDirection: 'row',
     // justifyContent: 'space-between',
   },
   imageContainer: {
-    height: 60,
-    width: 60,
-    backgroundColor: '#d3d3d3',
-    borderWidth: 0.5,
-    borderColor: '#ccc',
+    height: 100,
+    width: 100,
+    // backgroundColor: '#d3d3d3',
+    // borderWidth: 0.5,
+    // borderColor: '#ccc',
     borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
     margin: 10,
   },
   image: {
-    height: 50,
-    width: 50,
+    height: 80,
+    width: 80,
     resizeMode: 'contain',
-    borderRadius: 40,
+    borderRadius: 50,
+    marginVertical: 10,
   },
   details: {
     margin: 10,
-    width: '50%',
+    alignSelf: 'center',
+    justifyContent: 'center',
   },
   name: {
     fontSize: 17,
-    fontWeight: '700',
-    color: '#000',
+    fontFamily: 'Poppins-SemiBold',
+    color: '##10274F',
     marginBottom: 4,
   },
   address: {
     color: 'grey',
-    fontSize: 14,
+    fontSize: 15,
     marginBottom: 3,
+    fontFamily: 'Poppins-Regular',
+    alignSelf: 'center',
   },
   rates: {
     color: 'grey',
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 14,
+    fontFamily: 'Poppins-SemiBold',
+    alignSelf: 'center',
     marginVertical: 3,
   },
   licensesName: {
@@ -383,15 +423,17 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderTopRightRadius: 10,
-    borderLeftWidth: 80,
+    // borderLeftWidth: 80,
     borderTopWidth: 80,
+    borderLeftWidth: 0,
+
     borderStyle: 'solid',
     backgroundColor: 'green',
     borderLeftColor: 'transparent',
     borderTopColor: 'green',
     borderBottomColor: 'white',
-    alignSelf: 'center',
-    justifyContent: 'center',
+    alignSelf: 'flex-end',
+
     // alignItems: 'center',
   },
   status: {

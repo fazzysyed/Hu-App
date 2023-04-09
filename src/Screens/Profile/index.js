@@ -10,7 +10,12 @@ import {
   FlatList,
   Dimensions,
   Alert,
+  Platform,
 } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
+
+import Icon from 'react-native-vector-icons/AntDesign';
+import License from 'react-native-vector-icons/FontAwesome';
 
 import moment from 'moment';
 import {showMessage, hideMessage} from 'react-native-flash-message';
@@ -35,6 +40,13 @@ import {
 } from 'react-native-responsive-screen';
 import {getCurrentDate} from '../../Helper/GetCurrentDate';
 const width = Dimensions.get('window').width;
+
+const licenseData = [
+  {id: '1', type: 'Type 1', number: '12345', state: 'Active'},
+  {id: '2', type: 'Type 2', number: '67890', state: 'Inactive'},
+  {id: '3', type: 'Type 3', number: '24680', state: 'Active'},
+  {id: '4', type: 'Type 4', number: '13579', state: 'Inactive'},
+];
 const ProfileScreen = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -44,13 +56,30 @@ const ProfileScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [index, setIndex] = useState('profile');
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [addLicense, setAddLicense] = useState(false);
   const [item, setItem] = useState({});
   const [switchValue, setSwitchValue] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
 
+  const [licenses, setLicenses] = useState(licenseData);
+
   const [days, setDays] = useState(WEEK_DAYS);
 
   //Address State
+
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState('');
+  const [items, setItems] = useState([
+    {label: 'faraz', value: 'faraz'},
+    {label: 'mathew', value: 'mathew'},
+  ]);
+
+  const [open1, setOpen1] = useState(false);
+  const [value1, setValue1] = useState('');
+  const [items1, setItems1] = useState([
+    {label: 'faraz', value: 'faraz'},
+    {label: 'mathew', value: 'mathew'},
+  ]);
 
   const [address, setAddress] = useState({
     country: 'Pak',
@@ -76,7 +105,7 @@ const ProfileScreen = () => {
 
   // variables
   const snapPoints = useMemo(
-    () => ['25%', index === 'hours' ? '40%' : '40%'],
+    () => ['25%', index === 'hours' ? '50%' : '90%'],
     [],
   );
 
@@ -89,6 +118,44 @@ const ProfileScreen = () => {
   }, []);
 
   // renders
+
+  const renderItem = ({item}) => (
+    <View
+      style={{
+        borderWidth: 0.5,
+        padding: 10,
+        marginHorizontal: 10,
+        borderColor: '#ccc',
+        borderRadius: 6,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginVertical: 10,
+      }}>
+      <View>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <Text style={styles.heading}>Type:</Text>
+          <Text style={styles.subHeading}>{item.type}</Text>
+        </View>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <Text style={styles.heading}>Number:</Text>
+          <Text style={styles.subHeading}>{item.number}</Text>
+        </View>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <Text style={styles.heading}>State:</Text>
+          <Text style={styles.subHeading}>{item.state}</Text>
+        </View>
+      </View>
+      <View
+        style={{
+          alignSelf: 'flex-end',
+          flexDirection: 'row',
+          marginBottom: 5,
+        }}>
+        <Icon name="edit" size={24} color="#1C75BC" style={{marginRight: 16}} />
+        <Icon name="delete" size={24} color="red" />
+      </View>
+    </View>
+  );
 
   useEffect(() => {}, []);
 
@@ -250,11 +317,29 @@ const ProfileScreen = () => {
             <View style={styles.iconContainer}>
               <Hours name="hours-24" color={'#FFFFFF'} size={20} />
             </View>
-            <Text style={styles.settingTitle}>Visiting Hours</Text>
+            <Text style={styles.settingTitle}>Working Hours</Text>
           </View>
           <Right
             onPress={() => {
               setIndex('hours');
+              handlePresentModalPress();
+            }}
+            name="chevron-right"
+            size={30}
+            color="grey"
+            style={{marginHorizontal: 15}}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.row}>
+          <View style={styles.innerRow}>
+            <View style={styles.iconContainer}>
+              <License name="drivers-license" color={'#FFFFFF'} size={20} />
+            </View>
+            <Text style={styles.settingTitle}>My Linceses</Text>
+          </View>
+          <Right
+            onPress={() => {
+              setIndex('licenses');
               handlePresentModalPress();
             }}
             name="chevron-right"
@@ -504,333 +589,564 @@ const ProfileScreen = () => {
                   );
                 }}
               />
+              <View style={{height: 20}} />
+              <Button title={'Update'} />
+            </View>
+          )}
+
+          {index === 'licenses' && (
+            <View style={styles.flatcontainer}>
+              <Text
+                style={[styles.userName, {marginVertical: 20, fontSize: 23}]}>
+                My Licenses
+              </Text>
+              <FlatList
+                data={licenses}
+                renderItem={renderItem}
+                keyExtractor={item => item.id}
+              />
+              <Button
+                title={'Add New'}
+                onPress={() => {
+                  setAddLicense(true);
+                }}
+              />
             </View>
           )}
         </BottomSheetModal>
 
-        <View style={{}}>
-          <Modal isVisible={isModalVisible}>
+        <Modal isVisible={isModalVisible}>
+          <View
+            style={{
+              backgroundColor: '#1C75BC',
+              width: '100%',
+              borderWidth: 0,
+              borderTopRightRadius: hp(2),
+              borderTopLeftRadius: hp(2),
+              borderColor: ' #1C75BC',
+            }}>
+            <Text
+              allowFontScaling={false}
+              style={{
+                fontSize: hp(2.5),
+                color: '#fff',
+                textAlign: 'center',
+                paddingVertical: hp(2),
+                fontFamily: 'Poppins-SemiBold',
+              }}>
+              {'Working Hours For'} {item.name}
+            </Text>
+          </View>
+          <View style={styles.viewModal}>
             <View
               style={{
-                backgroundColor: '#1C75BC',
-                width: '100%',
-                borderWidth: 0,
-                borderTopRightRadius: hp(2),
-                borderTopLeftRadius: hp(2),
-                borderColor: ' #1C75BC',
+                paddingBottom: hp(2),
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+              }}>
+              <View />
+              <View style={{flexDirection: 'row', marginVertical: 10}}>
+                <Text
+                  allowFontScaling={false}
+                  style={{
+                    fontSize: hp(2),
+                    color: '#000',
+                    fontFamily: 'Poppins-Regular',
+                    marginHorizontal: 10,
+                  }}>
+                  {'Do this for all days'}
+                </Text>
+                <SwitchWithIcons
+                  // icon = {
+                  //   {  true: on,
+                  //     false: "",}
+                  //   }
+                  trackColor={{false: '#EBEBEB', true: '#C8CFF6'}}
+                  thumbColor={{false: '#FFFFFF', true: '#1C75BC'}}
+                  //  thumbColor="white"
+                  value={switchValue}
+                  onValueChange={() => setSwitchValue(!switchValue)}
+                />
+              </View>
+            </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}>
+              <View style={{flexDirection: 'row'}}>
+                <TouchableOpacity
+                  onPress={() => showDatePicker('to')}
+                  style={{alignSelf: 'center', flexDirection: 'row'}}>
+                  <View
+                    style={{
+                      width: 40,
+                      borderWidth: 1,
+                      borderColor: '#ccc',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderRadius: 10,
+                      height: 40,
+                      marginHorizontal: 5,
+                    }}>
+                    <Text
+                      allowFontScaling={false}
+                      style={{
+                        fontSize: hp(2.5),
+                        color: '#000',
+
+                        textAlign: 'center',
+                      }}>
+                      {toTime ? toTime.split(':')[0].trim() : '00'}
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      width: 40,
+                      borderWidth: 1,
+                      borderColor: '#ccc',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: 40,
+                      borderRadius: 10,
+                      marginHorizontal: 5,
+                    }}>
+                    <Text
+                      allowFontScaling={false}
+                      style={{
+                        fontSize: hp(2.5),
+                        color: '#000',
+
+                        textAlign: 'center',
+                      }}>
+                      {toTime
+                        ? toTime
+                            .split(':')[1]
+                            .trim()
+                            .split(
+                              toTime.split(':')[1].trim().includes('PM')
+                                ? 'PM'
+                                : 'AM',
+                            )
+                        : '00'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+              <View>
+                <Text
+                  allowFontScaling={false}
+                  style={{
+                    fontSize: hp(2.5),
+                    color: '#000',
+                    fontFamily: 'Poppins-SemiBold',
+                  }}>
+                  to
+                </Text>
+              </View>
+              <View style={{flexDirection: 'row'}}>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (toTime.length) {
+                      showDatePicker('from');
+                    } else {
+                      showMessage({
+                        message: 'Alert',
+                        description: 'Please select the start time first.',
+                        type: 'danger',
+                      });
+                    }
+                  }}
+                  style={{alignSelf: 'center', flexDirection: 'row'}}>
+                  <View
+                    style={{
+                      width: 40,
+                      borderWidth: 1,
+                      borderColor: '#ccc',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderRadius: 10,
+                      height: 40,
+                      marginHorizontal: 5,
+                    }}>
+                    <Text
+                      allowFontScaling={false}
+                      style={{
+                        fontSize: hp(2.5),
+                        color: '#000',
+
+                        textAlign: 'center',
+                      }}>
+                      {fromTime ? fromTime.split(':')[0].trim() : '00'}
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      width: 40,
+                      borderWidth: 1,
+                      borderColor: '#ccc',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderRadius: 10,
+                      height: 40,
+                      marginHorizontal: 5,
+                    }}>
+                    <Text
+                      allowFontScaling={false}
+                      style={{
+                        fontSize: hp(2.5),
+                        color: '#000',
+
+                        textAlign: 'center',
+                      }}>
+                      {fromTime
+                        ? fromTime
+                            .split(':')[1]
+                            .trim()
+                            .split(
+                              fromTime.split(':')[1].trim().includes('PM')
+                                ? 'PM'
+                                : 'AM',
+                            )
+                        : '00'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+            {toTime || fromTime ? (
+              <Text
+                allowFontScaling={false}
+                style={{
+                  fontSize: hp(2.3),
+                  color: '#000',
+                  borderRadius: 10,
+                  marginTop: 30,
+                  textAlign: 'center',
+                }}>
+                {toTime} {''} to {''} {fromTime}
+              </Text>
+            ) : null}
+            <View
+              style={{
+                backgroundColor: '#ccc',
+                width: '75%',
+                height: '0.6%',
+                alignSelf: 'center',
+                marginTop: hp(2),
+                marginBottom: hp(3),
+              }}></View>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-around',
+                marginBottom: 10,
+
+                // marginHorizontal: wp(6),
+              }}>
+              <TouchableOpacity
+                onPress={() => {
+                  if (item.toTime) {
+                    delete item.toTime;
+                    delete item.fromTime;
+                    setIsModalVisible(false);
+                  } else {
+                    setIsModalVisible(false);
+                  }
+                }}
+                style={{
+                  width: '40%',
+                  borderWidth: 2,
+                  borderColor: '#1C75BC',
+                  borderRadius: 10,
+                  backgroundColor: '#fff',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: 50,
+                }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: '#1C75BC',
+                    fontFamily: 'Poppins-SemiBold',
+                  }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  if (switchValue) {
+                    if (fromTime && toTime) {
+                      const newArray = [...days];
+                      let selectedIds = [];
+                      newArray.map(item => {
+                        item.toTime = toTime;
+                        item.fromTime = fromTime;
+                        selectedIds.push(item.id);
+                      });
+                      setSelectedIds(selectedIds);
+
+                      setDays(newArray);
+                      setFromTime('');
+                      setToTime('');
+
+                      setIsModalVisible(false);
+                    } else {
+                      showMessage({
+                        message: 'Alert',
+                        description: 'Please select start and end time',
+                        type: 'danger',
+                      });
+                    }
+                  } else {
+                    if (fromTime && toTime) {
+                      const newArray = [...days];
+                      let objIndex = newArray.findIndex(
+                        obj => obj.id === item.id,
+                      );
+
+                      newArray[objIndex].toTime = toTime;
+                      newArray[objIndex].fromTime = fromTime;
+                      setDays(newArray);
+                      setFromTime('');
+                      setToTime('');
+                      // handleSelectionMultiple(item);
+                      setIsModalVisible(false);
+                    } else {
+                      showMessage({
+                        message: 'Alert',
+                        description: 'Please select start and end time',
+                        type: 'danger',
+                      });
+                    }
+                  }
+                }}
+                style={{
+                  width: '40%',
+                  borderWidth: 2,
+                  borderColor: '#1C75BC',
+                  borderRadius: 10,
+                  backgroundColor: '#1C75BC',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: 50,
+                }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: '#fff',
+                    fontFamily: 'Poppins-SemiBold',
+                  }}>
+                  Add
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View style={{flexDirection: 'row', marginVertical: hp(2)}}></View>
+            <DateTimePickerModal
+              isVisible={isDatePickerVisible}
+              mode="time"
+              onConfirm={handleConfirm}
+              date={moment('2000-01-01T20:00:00').toDate()}
+              onCancel={hideDatePicker}
+            />
+          </View>
+        </Modal>
+
+        <Modal isVisible={addLicense}>
+          <View
+            style={{
+              backgroundColor: '#1C75BC',
+              width: '100%',
+              borderWidth: 0,
+              borderTopRightRadius: hp(2),
+              borderTopLeftRadius: hp(2),
+              borderColor: ' #1C75BC',
+            }}>
+            <Text
+              allowFontScaling={false}
+              style={{
+                fontSize: hp(2.5),
+                color: '#fff',
+                textAlign: 'center',
+                paddingVertical: hp(2),
+                fontFamily: 'Poppins-SemiBold',
+              }}>
+              Add new license
+            </Text>
+          </View>
+          <View style={[styles.viewModal, {paddingHorizontal: 0}]}>
+            <View
+              style={{
+                marginHorizontal: 10,
+                marginVertical: 10,
+
+                // zIndex: Platform.OS === 'ios' ? 10 : null,
+                zIndex: Platform.OS === 'ios' ? 10 : 100,
               }}>
               <Text
                 allowFontScaling={false}
                 style={{
-                  fontSize: hp(2.5),
-                  color: '#fff',
-                  textAlign: 'center',
-                  paddingVertical: hp(2),
-                  fontFamily: 'Poppins-SemiBold',
+                  fontSize: hp(1.8),
+                  color: '#000',
+                  fontFamily: 'Poppins-Regular',
+
+                  marginBottom: 10,
                 }}>
-                {'Visiting Hours For'} {item.name}
+                {'License Type'}
               </Text>
+
+              <DropDownPicker
+                dropDownDirection="TOP"
+                style={{borderColor: '#E4E4E4', fontFamily: 'Poppins-Regular'}}
+                placeholder="Select Type"
+                placeholderStyle={{fontFamily: 'Poppins-Regular'}}
+                open={open}
+                value={value}
+                items={items}
+                setOpen={setOpen}
+                setValue={setValue}
+                setItems={setItems}
+              />
             </View>
-            <View style={styles.viewModal}>
-              <View
+            {/* {typeError.length ? (
+            <Text
+              allowFontScaling={false}
+              style={{
+                color: 'red',
+                fontSize: 12,
+                marginHorizontal: 15,
+                marginVertical: 5,
+                marginTop: 10,
+                fontFamily: 'Poppins-Regular',
+              }}>
+              {typeError}
+            </Text>
+          ) : null} */}
+
+            <View
+              style={{
+                marginHorizontal: 10,
+                marginVertical: 10,
+
+                // zIndex: Platform.OS === 'ios' ? 10 : null,
+                zIndex: Platform.OS === 'ios' ? 10 : 100,
+              }}>
+              <Text
+                allowFontScaling={false}
                 style={{
-                  paddingBottom: hp(2),
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
+                  fontSize: hp(1.8),
+                  color: '#000',
+                  fontFamily: 'Poppins-Regular',
+
+                  marginBottom: 10,
                 }}>
-                <View />
-                <View style={{flexDirection: 'row', marginVertical: 10}}>
-                  <Text
-                    allowFontScaling={false}
-                    style={{
-                      fontSize: hp(2),
-                      color: '#000',
-                      fontFamily: 'Poppins-Regular',
-                      marginHorizontal: 10,
-                    }}>
-                    {'Do this for all days'}
-                  </Text>
-                  <SwitchWithIcons
-                    // icon = {
-                    //   {  true: on,
-                    //     false: "",}
-                    //   }
-                    trackColor={{false: '#EBEBEB', true: '#C8CFF6'}}
-                    thumbColor={{false: '#FFFFFF', true: '#1C75BC'}}
-                    //  thumbColor="white"
-                    value={switchValue}
-                    onValueChange={() => setSwitchValue(!switchValue)}
-                  />
-                </View>
-              </View>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
+                {'State'}
+              </Text>
+
+              <DropDownPicker
+                dropDownDirection="BOTTOM"
+                style={{borderColor: '#E4E4E4', fontFamily: 'Poppins-Regular'}}
+                placeholder="Select Type"
+                placeholderStyle={{fontFamily: 'Poppins-Regular'}}
+                open={open1}
+                value={value1}
+                items={items1}
+                setOpen={setOpen1}
+                setValue={setValue1}
+                setItems={setItems1}
+              />
+            </View>
+
+            <View
+              style={{
+                marginVertical: 10,
+              }}>
+              <CustomInput label={'Number'} />
+
+              <TouchableOpacity
+                onPress={() => {
+                  // let newPin = `${Generate()}`;
+                  // setPin(newPin);
                 }}>
-                <View style={{flexDirection: 'row'}}>
-                  <TouchableOpacity
-                    onPress={() => showDatePicker('to')}
-                    style={{alignSelf: 'center', flexDirection: 'row'}}>
-                    <View
-                      style={{
-                        width: 40,
-                        borderWidth: 1,
-                        borderColor: '#ccc',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderRadius: 10,
-                        height: 40,
-                        marginHorizontal: 5,
-                      }}>
-                      <Text
-                        allowFontScaling={false}
-                        style={{
-                          fontSize: hp(2.5),
-                          color: '#000',
-
-                          textAlign: 'center',
-                        }}>
-                        {toTime ? toTime.split(':')[0].trim() : '00'}
-                      </Text>
-                    </View>
-                    <View
-                      style={{
-                        width: 40,
-                        borderWidth: 1,
-                        borderColor: '#ccc',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: 40,
-                        borderRadius: 10,
-                        marginHorizontal: 5,
-                      }}>
-                      <Text
-                        allowFontScaling={false}
-                        style={{
-                          fontSize: hp(2.5),
-                          color: '#000',
-
-                          textAlign: 'center',
-                        }}>
-                        {toTime
-                          ? toTime
-                              .split(':')[1]
-                              .trim()
-                              .split(
-                                toTime.split(':')[1].trim().includes('PM')
-                                  ? 'PM'
-                                  : 'AM',
-                              )
-                          : '00'}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-                <View>
-                  <Text
-                    allowFontScaling={false}
-                    style={{
-                      fontSize: hp(2.5),
-                      color: '#000',
-                      fontFamily: 'Poppins-SemiBold',
-                    }}>
-                    to
-                  </Text>
-                </View>
-                <View style={{flexDirection: 'row'}}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (toTime.length) {
-                        showDatePicker('from');
-                      } else {
-                        showMessage({
-                          message: 'Alert',
-                          description: 'Please select the start time first.',
-                          type: 'danger',
-                        });
-                      }
-                    }}
-                    style={{alignSelf: 'center', flexDirection: 'row'}}>
-                    <View
-                      style={{
-                        width: 40,
-                        borderWidth: 1,
-                        borderColor: '#ccc',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderRadius: 10,
-                        height: 40,
-                        marginHorizontal: 5,
-                      }}>
-                      <Text
-                        allowFontScaling={false}
-                        style={{
-                          fontSize: hp(2.5),
-                          color: '#000',
-
-                          textAlign: 'center',
-                        }}>
-                        {fromTime ? fromTime.split(':')[0].trim() : '00'}
-                      </Text>
-                    </View>
-                    <View
-                      style={{
-                        width: 40,
-                        borderWidth: 1,
-                        borderColor: '#ccc',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderRadius: 10,
-                        height: 40,
-                        marginHorizontal: 5,
-                      }}>
-                      <Text
-                        allowFontScaling={false}
-                        style={{
-                          fontSize: hp(2.5),
-                          color: '#000',
-
-                          textAlign: 'center',
-                        }}>
-                        {fromTime
-                          ? fromTime
-                              .split(':')[1]
-                              .trim()
-                              .split(
-                                fromTime.split(':')[1].trim().includes('PM')
-                                  ? 'PM'
-                                  : 'AM',
-                              )
-                          : '00'}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              {toTime || fromTime ? (
                 <Text
                   allowFontScaling={false}
                   style={{
-                    fontSize: hp(2.3),
-                    color: '#000',
-                    borderRadius: 10,
-                    marginTop: 30,
-                    textAlign: 'center',
+                    marginHorizontal: 15,
+                    fontFamily: 'Poppins-Bold',
+                    textDecorationLine: 'underline',
+                    color: '#1C75BC',
                   }}>
-                  {toTime} {''} to {''} {fromTime}
+                  Generate
                 </Text>
-              ) : null}
-              <View
-                style={{
-                  backgroundColor: '#ccc',
-                  width: '75%',
-                  height: '0.6%',
-                  alignSelf: 'center',
-                  marginTop: hp(2),
-                  marginBottom: hp(3),
-                }}></View>
-              <View style={{flexDirection: 'row', marginVertical: hp(2)}}>
-                <View
-                  style={{
-                    width: '50%',
-                    borderWidth: 2,
-                    borderColor: '#1C75BC',
-                    borderRadius: 10,
-                    backgroundColor: '#fff',
-                  }}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (item.toTime) {
-                        delete item.toTime;
-                        delete item.fromTime;
-                        setIsModalVisible(false);
-                      } else {
-                        setIsModalVisible(false);
-                      }
-                    }}
-                    style={styles.otCancel}>
-                    <Text allowFontScaling={false} style={styles.textCancel}>
-                      {item.toTime ? 'Clear' : 'Cancel'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <View
-                  style={{
-                    width: '50%',
-                    alignSelf: 'center',
-                    borderWidth: 1,
-                    borderColor: '#1C75BC',
-                    borderRadius: 10,
-                    backgroundColor: '#1C75BC',
-                    marginLeft: wp(4),
-                  }}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (switchValue) {
-                        if (fromTime && toTime) {
-                          const newArray = [...days];
-                          let selectedIds = [];
-                          newArray.map(item => {
-                            item.toTime = toTime;
-                            item.fromTime = fromTime;
-                            selectedIds.push(item.id);
-                          });
-                          setSelectedIds(selectedIds);
-
-                          setDays(newArray);
-                          setFromTime('');
-                          setToTime('');
-
-                          setIsModalVisible(false);
-                        } else {
-                          showMessage({
-                            message: 'Alert',
-                            description: 'Please select start and end time',
-                            type: 'danger',
-                          });
-                        }
-                      } else {
-                        if (fromTime && toTime) {
-                          const newArray = [...days];
-                          let objIndex = newArray.findIndex(
-                            obj => obj.id === item.id,
-                          );
-
-                          newArray[objIndex].toTime = toTime;
-                          newArray[objIndex].fromTime = fromTime;
-                          setDays(newArray);
-                          setFromTime('');
-                          setToTime('');
-                          // handleSelectionMultiple(item);
-                          setIsModalVisible(false);
-                        } else {
-                          showMessage({
-                            message: 'Alert',
-                            description: 'Please select start and end time',
-                            type: 'danger',
-                          });
-                        }
-                      }
-                    }}
-                    style={styles.otCancel}>
-                    <Text allowFontScaling={false} style={styles.textCancel1}>
-                      {'Add'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <DateTimePickerModal
-                isVisible={isDatePickerVisible}
-                mode="time"
-                onConfirm={handleConfirm}
-                date={moment('2000-01-01T20:00:00').toDate()}
-                onCancel={hideDatePicker}
-              />
+              </TouchableOpacity>
             </View>
-          </Modal>
-        </View>
+
+            <View
+              style={{
+                backgroundColor: '#ccc',
+                width: '75%',
+                height: '0.6%',
+                alignSelf: 'center',
+                marginTop: hp(2),
+                marginBottom: hp(3),
+              }}></View>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-around',
+                marginBottom: 10,
+
+                // marginHorizontal: wp(6),
+              }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setAddLicense(false);
+                }}
+                style={{
+                  width: '40%',
+                  borderWidth: 2,
+                  borderColor: '#1C75BC',
+                  borderRadius: 10,
+                  backgroundColor: '#fff',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: 50,
+                }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: '#1C75BC',
+                    fontFamily: 'Poppins-SemiBold',
+                  }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  width: '40%',
+                  borderWidth: 2,
+                  borderColor: '#1C75BC',
+                  borderRadius: 10,
+                  backgroundColor: '#1C75BC',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: 50,
+                }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: '#fff',
+                    fontFamily: 'Poppins-SemiBold',
+                  }}>
+                  Add
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </Layout>
     </BottomSheetModalProvider>
   );
@@ -965,6 +1281,19 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   flatListStyle: {marginTop: 15},
+  heading: {
+    fontSize: 16,
+    color: 'grey',
+    fontFamily: 'Poppins-SemiBold',
+    width: 100,
+    marginVertical: 3,
+  },
+  subHeading: {
+    fontSize: 14,
+    color: 'grey',
+    fontFamily: 'Poppins-Regular',
+    marginHorizontal: 10,
+  },
 });
 
 export default ProfileScreen;

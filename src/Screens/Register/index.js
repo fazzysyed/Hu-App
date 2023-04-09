@@ -24,6 +24,8 @@ import CustomInput from '../../components/CustomInput';
 
 // import {InternetCheck} from '../Helper/NetworkCheck';
 import {validateEmail, validatePassword} from '../../Helper/Vilidator';
+import {handleAPIRequest} from '../../Helper/ApiHandler';
+import {showMessage} from 'react-native-flash-message';
 
 const CreateAccount = ({navigation}) => {
   const [email, setEmail] = useState('');
@@ -52,7 +54,72 @@ const CreateAccount = ({navigation}) => {
   ]);
   const [typeError, setTypeError] = useState('');
   //Register Handler
-  const registerHandler = async () => {};
+  const registerHandler = async () => {
+    if (!firstName.length) {
+      setFirstNameError('First name is required');
+    }
+    if (!lastName.length) {
+      setLastNameError('Last name is required');
+    }
+    if (!email.length) {
+      setEmailError('Email is required');
+    }
+    if (!password.length) {
+      setPasswordError('Password is required');
+    }
+    if (!confirmPassword.length) {
+      setConfirmPasswordError('Confrim password is required');
+    }
+    if (!phone.length) {
+      setPhoneError('Phone is required');
+    }
+    if (!address.length) {
+      setAddressError('Address is required');
+    }
+    if (!value.length) {
+      setTypeError('Type is required');
+    }
+
+    if (
+      firstName.length &&
+      lastName.length &&
+      email.length &&
+      password.length &&
+      confirmPassword.length &&
+      phone.length &&
+      address.length &&
+      value.length
+    ) {
+      setLoading(true);
+      setFirstNameError('');
+      setLastNameError('');
+      setEmailError('');
+      setPasswordError('');
+      setConfirmPasswordError('');
+      setAddressError('');
+      setPhoneError('');
+      setTypeError('');
+      handleAPIRequest('post', 'register', {
+        type: value,
+        firstname: firstName,
+        lastname: lastName,
+        email: email,
+        phone: phone,
+        password: password,
+      })
+        .then(response => {
+          showMessage({
+            message: `Congratulations ${firstName} ${lastName}`,
+            description: 'your account created successfully.',
+            type: 'success',
+          });
+          setLoading(false);
+        })
+        .catch(e => {
+          setLoading(false);
+        });
+    }
+  };
   useEffect(() => {
     const updateEmailErrMessage = async () => {
       if (email.length && !validateEmail(email)) {

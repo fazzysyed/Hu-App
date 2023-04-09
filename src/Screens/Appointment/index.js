@@ -224,6 +224,26 @@ const Appointment = ({navigation, route}) => {
           />
         </View>
 
+        <Text allowFontScaling={false} style={styles.dateText}>
+          Description
+        </Text>
+        <View style={styles.currentDate}>
+          <Input
+            placeholder={'Description'}
+            value={'Price'}
+            // errorMessage={errorMessage}
+            inputContainerStyle={{borderBottomWidth: 0}}
+            // onChangeText={text => onChangeText(text)}
+            // keyboardType={keyboardType}
+            style={[
+              styles.input,
+              {
+                height: 100,
+              },
+            ]}
+          />
+        </View>
+
         <Button title={'Make'} loading={loading} onPress={makeAppointment} />
 
         {isDatePickerVisible && (

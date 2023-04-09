@@ -3,6 +3,7 @@ import React, {useState, useEffect} from 'react';
 import Layout from '../../components/Layout';
 import Button from '../../components/Button';
 import CustomInput from '../../components/CustomInput';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
   widthPercentageToDP as wp,
@@ -11,15 +12,32 @@ import {
 import {Card} from 'react-native-paper';
 import Email from 'react-native-vector-icons/Entypo';
 import {validateEmail, validatePassword} from '../../Helper/Vilidator';
+import {handleAPIRequest} from '../../Helper/ApiHandler';
+import {useDispatch} from 'react-redux';
+import {setUser} from '../../Store/Actions/Actions';
 
 const index = ({navigation}) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const dispatch = useDispatch();
+  const [email, setEmail] = useState('emerge2001@gmail.com');
+  const [password, setPassword] = useState('Testing123');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [loading, setLoading] = useState(false);
   const [disabledButton, setButtonDisabled] = useState(true);
+
+  const loginHandler = () => {
+    handleAPIRequest('post', 'login', {email: email, password: password})
+      .then(response => {
+        if (response) {
+          dispatch(setUser(response.user));
+          console.log(response.user);
+          AsyncStorage.setItem('User', JSON.stringify(response.user));
+        }
+      })
+      .catch(e => {
+        console.log(e);
+      });
+  };
 
   useEffect(() => {
     const updateEmailErrMessage = async () => {
@@ -34,17 +52,17 @@ const index = ({navigation}) => {
     updateEmailErrMessage();
   }, [email]);
 
-  useEffect(() => {
-    const updatePasswordErrMessage = async () => {
-      if (password.length && !validatePassword(password)) {
-        setPasswordError('Invalid Password');
-        return null;
-      }
-      setPasswordError('');
-      return null;
-    };
-    updatePasswordErrMessage();
-  }, [password]);
+  // useEffect(() => {
+  //   const updatePasswordErrMessage = async () => {
+  //     if (password.length && !validatePassword(password)) {
+  //       setPasswordError('Invalid Password');
+  //       return null;
+  //     }
+  //     setPasswordError('');
+  //     return null;
+  //   };
+  //   updatePasswordErrMessage();
+  // }, [password]);
 
   useEffect(() => {
     const updateDisabledButton = async () => {
@@ -98,7 +116,7 @@ const index = ({navigation}) => {
         <Button
           title={'Login'}
           onPress={() => {
-            navigation.navigate('Home');
+            loginHandler();
           }}
           loading={loading}
           color={disabledButton ? '#1C75BC' : null}

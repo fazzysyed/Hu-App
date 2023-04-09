@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
 
 import {
+  Alert,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -27,6 +28,8 @@ import {createStackNavigator} from '@react-navigation/stack';
 import Appointment from './src/Screens/Appointment';
 import {createDrawerNavigator} from '@react-navigation/drawer';
 import ProfileScreen from './src/Screens/Profile';
+import CustomSidebarMenu from './src/components/SideMenu';
+import {useSelector} from 'react-redux';
 
 const STACK = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -66,7 +69,6 @@ const App = () => {
   };
   const systemTheme = useColorScheme();
   const theme = systemTheme === 'dark' ? darkTheme : lightTheme;
-  const [user, setUser] = useState();
 
   useEffect(() => {}, []);
 
@@ -113,7 +115,9 @@ const App = () => {
 
   const AppStack = () => {
     return (
-      <Drawer.Navigator initialRouteName="Home">
+      <Drawer.Navigator
+        drawerContent={props => <CustomSidebarMenu {...props} />}
+        initialRouteName="Home">
         <Drawer.Screen
           component={AppStackNavigation}
           name="Home"
