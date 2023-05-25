@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: hp(2),
     color: '#FFFFFF',
-    elevation: 2,
+
     fontFamily: 'Poppins-Regular',
     textAlign: 'center',
   },

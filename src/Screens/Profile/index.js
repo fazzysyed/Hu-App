@@ -26,7 +26,11 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 import Layout from '../../components/Layout';
 import CustomInput from '../../components/CustomInput';
-import {BottomSheetModal, BottomSheetModalProvider} from '@gorhom/bottom-sheet';
+import {
+  BottomSheetFlatList,
+  BottomSheetModal,
+  BottomSheetModalProvider,
+} from '@gorhom/bottom-sheet';
 import Right from 'react-native-vector-icons/Entypo';
 import Business from 'react-native-vector-icons/MaterialIcons';
 import SwitchWithIcons from 'react-native-switch-with-icons';
@@ -39,6 +43,7 @@ import {
   widthPercentageToDP as wp,
 } from 'react-native-responsive-screen';
 import {getCurrentDate} from '../../Helper/GetCurrentDate';
+import {handleAPIRequest} from '../../Helper/ApiHandler';
 const width = Dimensions.get('window').width;
 
 const licenseData = [
@@ -82,24 +87,28 @@ const ProfileScreen = () => {
   ]);
 
   const [address, setAddress] = useState({
-    country: 'Pak',
-    state: 'pak',
-    city: 'pak',
-    zip: 2500,
-    Address: 'street 120 islamabad',
+    country: '',
+    state: '',
+    city: '',
+    zip: '',
+    address1: '',
+    address2: '',
+    type: '',
+    uuid: '',
   });
 
   const [business, setBusiness] = useState({
-    name: 'business',
-    url: 'url',
-    about: 'about',
-    public_phone: '232332',
+    name: '',
+    url: '',
+    about: '',
+    public_phone: '',
   });
   const [fromTime, setFromTime] = useState('');
   const [whichtime, setWhichtime] = useState('');
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [toTime, setToTime] = useState('');
   const [notification, setNotifications] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
 
   const bottomSheetModalRef = useRef(null);
 
@@ -157,7 +166,21 @@ const ProfileScreen = () => {
     </View>
   );
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    handleAPIRequest('get', `user`, null)
+      .then(response => {
+        if (response) {
+          // dispatch(getAllPros(response));
+          setUserProfile(response.user.profile);
+          console.warn(response.user.profile, 'ProfilePciture');
+
+          // AsyncStorage.setItem('User', JSON.stringify(response.user));
+        }
+      })
+      .catch(e => {
+        console.log(e);
+      });
+  }, []);
 
   const itemHandler = item => {
     setItem(item);
@@ -284,7 +307,7 @@ const ProfileScreen = () => {
           </View>
           <Right
             onPress={() => {
-              setIndex('address');
+              setIndex('addresses');
               handlePresentModalPress();
             }}
             name="chevron-right"
@@ -371,6 +394,7 @@ const ProfileScreen = () => {
         </TouchableOpacity>
 
         <BottomSheetModal
+          enableContentPanningGesture={false}
           ref={bottomSheetModalRef}
           index={1}
           snapPoints={snapPoints}
@@ -471,7 +495,93 @@ const ProfileScreen = () => {
             </ScrollView>
           )}
 
-          {index === 'address' && (
+          {index === 'addresses' && (
+            <View style={{flex: 1}}>
+              <Text
+                style={[styles.userName, {marginVertical: 20, fontSize: 23}]}>
+                Addresses
+              </Text>
+              <BottomSheetFlatList
+                data={userProfile.addresses}
+                ListFooterComponent={() => <View style={{height: 50}} />}
+                style={{height: 400}}
+                renderItem={({item}) => (
+                  <View
+                    style={{
+                      borderWidth: 0.5,
+                      padding: 6,
+                      marginHorizontal: 15,
+                      borderColor: '#ccc',
+                      borderRadius: 6,
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      marginVertical: 10,
+                    }}>
+                    <View>
+                      <View
+                        style={{flexDirection: 'row', alignItems: 'center'}}>
+                        <Text style={styles.heading}>Address 1:</Text>
+                        <Text style={styles.subHeading}>{item.address_1}</Text>
+                      </View>
+                      <View
+                        style={{flexDirection: 'row', alignItems: 'center'}}>
+                        <Text style={styles.heading}>Address 2:</Text>
+                        <Text style={styles.subHeading}>{item.address_2}</Text>
+                      </View>
+                      <View
+                        style={{flexDirection: 'row', alignItems: 'center'}}>
+                        <>
+                          <Text style={styles.heading}>City:</Text>
+                          <Text style={styles.subHeading}>{item.city}</Text>
+                        </>
+                        <>
+                          <Text style={[styles.heading, {width: undefined}]}>
+                            State:
+                          </Text>
+                          <Text style={styles.subHeading}>{item.state}</Text>
+                        </>
+                      </View>
+                      <View
+                        style={{flexDirection: 'row', alignItems: 'center'}}>
+                        <Text style={styles.heading}>Zip:</Text>
+                        <Text style={styles.subHeading}>{item.zip}</Text>
+                      </View>
+                    </View>
+                    <View
+                      style={{
+                        alignSelf: 'flex-start',
+                        flexDirection: 'row',
+                        marginBottom: 5,
+                      }}>
+                      <Icon
+                        name="edit"
+                        size={22}
+                        color="#1C75BC"
+                        onPress={() => {
+                          setIndex('updateAddress');
+                          // console.warn(item);
+
+                          setAddress({
+                            city: item.city,
+                            address1: item.address_1,
+                            address2: item.address2,
+                            state: item.state,
+                            zip: item.zip,
+                            uuid: item.uuid,
+                            type: item.type,
+                            country: item.country,
+                          });
+                        }}
+                        // style={{marginRight: 16}}
+                      />
+                    </View>
+                  </View>
+                )}
+              />
+            </View>
+          )}
+
+          {index === 'updateAddress' && (
             <View style={styles.container}>
               <View
                 style={{flexDirection: 'row', justifyContent: 'center'}}></View>
@@ -493,10 +603,16 @@ const ProfileScreen = () => {
                 onChangeText={text => setAddress({...address, city: text})}
               />
               <CustomInput
-                label={'Address'}
+                label={'Address 2'}
                 height
-                value={address.Address}
-                onChangeText={text => setAddress({...address, address: text})}
+                value={address.address1}
+                onChangeText={text => setAddress({...address, address1: text})}
+              />
+              <CustomInput
+                label={'Address 1'}
+                height
+                value={address.address2}
+                onChangeText={text => setAddress({...address, address2: text})}
               />
 
               <Button title={'Update'} />
@@ -595,15 +711,16 @@ const ProfileScreen = () => {
           )}
 
           {index === 'licenses' && (
-            <View style={styles.flatcontainer}>
+            <View style={{flex: 1}}>
               <Text
                 style={[styles.userName, {marginVertical: 20, fontSize: 23}]}>
                 My Licenses
               </Text>
-              <FlatList
+              <BottomSheetFlatList
                 data={licenses}
                 renderItem={renderItem}
                 keyExtractor={item => item.id}
+                contentContainerStyle={{height: 200}}
               />
               <Button
                 title={'Add New'}
@@ -1270,7 +1387,6 @@ const styles = StyleSheet.create({
   },
   otCancel: {
     // backgroundColor: 'red',
-    elevation: 2,
   },
   viewModal: {
     backgroundColor: '#fff',
@@ -1282,10 +1398,10 @@ const styles = StyleSheet.create({
   },
   flatListStyle: {marginTop: 15},
   heading: {
-    fontSize: 16,
+    fontSize: 15,
     color: 'grey',
     fontFamily: 'Poppins-SemiBold',
-    width: 100,
+    width: 80,
     marginVertical: 3,
   },
   subHeading: {

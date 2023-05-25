@@ -24,16 +24,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#1C75BC',
     borderRadius: 20,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 5,
     marginHorizontal: 4,
     borderWidth: 0.5,
 
-    marginBottom: 8,
+    marginBottom: 5,
   },
   label: {
     color: '#999',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontFamily: 'Poppins-SemiBold',
   },
 });
 

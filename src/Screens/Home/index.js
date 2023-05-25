@@ -6,12 +6,15 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
+  ImageBackground,
 } from 'react-native';
+import {Rating, AirbnbRating} from 'react-native-ratings';
+
 import {BottomSheetModal, BottomSheetModalProvider} from '@gorhom/bottom-sheet';
 import Layout from '../../components/Layout';
 import Checkbox from '../../components/Checkbox';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
-import Icon from 'react-native-vector-icons/Octicons';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import Star from 'react-native-vector-icons/AntDesign';
 import HomeSearch from '../../components/Search';
 import CustomLabel from '../../components/Label';
@@ -21,6 +24,7 @@ import {handleAPIRequest} from '../../Helper/ApiHandler';
 import axios from 'axios';
 import {useDispatch, useSelector} from 'react-redux';
 import {getAllPros} from '../../Store/Actions/Actions';
+import index from '../Login';
 
 const data = {
   uuid: 'b94a089b-6779-47a7-b5e4-9096c78392f3',
@@ -105,9 +109,7 @@ const App = ({navigation}) => {
 
         console.log(profressionals, 'fafajfeyyfe');
       })
-      .catch(e => {
-        console.log(e);
-      });
+      .catch(e => {});
   }, []);
 
   const handlePress = id => {
@@ -158,54 +160,82 @@ const App = ({navigation}) => {
             data={profressionals}
             showsVerticalScrollIndicator={false}
             renderItem={({item}) => (
-              <View style={{borderWidth: 1, borderRadius: 5}}>
-                <View style={styles.triangle} />
-              </View>
-              // <TouchableOpacity
-              //   style={styles.itemContainer}
-              //   onPress={() =>
-              //     navigation.navigate('Details', {
-              //       proId: item.uuid,
-              //     })
-              //   }>
-              //   <Image
-              //     style={styles.image}
-              //     source={
-              //       item.photo_url
-              //         ? item.photo_url
-              //         : require('../../assets/images/pro.png')
-              //     }
-              //   />
+              <TouchableOpacity
+                style={styles.itemContainer}
+                onPress={() =>
+                  navigation.navigate('Details', {
+                    proId: item.uuid,
+                  })
+                }>
+                <ImageBackground
+                  style={styles.triangle}
+                  source={
+                    item.verified === 'yes'
+                      ? require('../../assets/images/shape.png')
+                      : require('../../assets/images/shape2.png')
+                  }>
+                  <Icon
+                    name="verified"
+                    color={'#FFFFFF'}
+                    size={20}
+                    style={{
+                      position: 'absolute',
+                      right: 5,
+                      top: 0,
+                      marginTop: 10,
+                    }}
+                  />
+                </ImageBackground>
+                <>
+                  <Image
+                    style={styles.image}
+                    source={
+                      item.photo_url
+                        ? item.photo_url
+                        : require('../../assets/images/pro.png')
+                    }
+                  />
 
-              //   <View style={styles.details}>
-              //     <Text style={styles.name}>
-              //       {item.firstname} {item.lastname}
-              //     </Text>
-              //     <Text style={styles.address}>Address Here</Text>
-              //     <Text style={styles.rates}>
-              //       ${item.pro_profile ? item.pro_profile.hourly_rate : '0'}
-              //       /Hour
-              //     </Text>
-              //     <Text style={styles.rates}>
-              //       ${item.pro_profile ? item.pro_profile.daily_rate : '0'}
-              //       /Daily
-              //     </Text>
-              //   </View>
-              //   <View style={styles.lastContainer}>
-              //     {item.verified === 'yes' ? (
-              //       <View style={styles.status}>
-              //         <Icon name="verified" color={'#FFFFFF'} size={17} />
-              //       </View>
-              //     ) : (
-              //       <View />
-              //     )}
+                  <View style={styles.details}>
+                    <Text style={styles.name}>
+                      {item.firstname} {item.lastname}
+                    </Text>
 
-              //     <View style={styles.ratingContainer}>
-              //       <Text style={styles.rating}>4.3</Text>
-              //       <Star name="star" color={'#ffe234'} size={20} />
-              //     </View>
-              //   </View>
-              // </TouchableOpacity>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                      {item.licenses.map((item, index) => (
+                        <Text style={styles.address}>{item.abbrev}, </Text>
+                      ))}
+                    </View>
+
+                    <Text style={styles.rates}>
+                      Rates: $
+                      {item.pro_profile ? item.pro_profile.hourly_rate : '0'}
+                      /Hour, $
+                      {item.pro_profile ? item.pro_profile.daily_rate : '0'}
+                      /Daily
+                    </Text>
+                    <Text style={styles.rates}>
+                      Radius : {item.radius ? item.radius : 0} miles away
+                    </Text>
+                  </View>
+                  <View style={styles.lastContainer}>
+                    <View style={styles.ratingContainer}>
+                      <Rating
+                        // onFinishRating={this.ratingCompleted}
+                        imageSize={25}
+                        style={{marginVertical: 2}}
+                      />
+                      {/* <Text style={styles.rating}>4.3</Text>
+                      <Star name="star" color={'#ffe234'} size={20} /> */}
+                    </View>
+                  </View>
+                </>
+              </TouchableOpacity>
             )}
           />
         </View>
@@ -217,9 +247,13 @@ const App = ({navigation}) => {
           onChange={handleSheetChanges}>
           <View style={styles.contentContainer}>
             <Text style={styles.label}>Hourly Rate</Text>
-            <View style={{marginTop: 20}}>
+            <View
+              style={{
+                marginTop: 10,
+                alignSelf: 'center',
+              }}>
               <MultiSlider
-                sliderLength={350}
+                sliderLength={330}
                 selectedStyle={{
                   backgroundColor: '#1C75BC',
                 }}
@@ -264,7 +298,7 @@ const App = ({navigation}) => {
               </View>
             </View>
             <View style={{marginTop: 20}}>
-              <Text style={styles.label}>Hourly Rate</Text>
+              <Text style={styles.label}>Tags</Text>
               <View style={{marginTop: 20}}>
                 <FlatList
                   data={DATA}
@@ -274,8 +308,11 @@ const App = ({navigation}) => {
                 />
               </View>
             </View>
-            <View style={{flexDirection: 'row', justifyContent: 'center'}}>
+            <View style={{flexDirection: 'row'}}>
               <TouchableOpacity
+                onPress={() => {
+                  bottomSheetModalRef.current?.close();
+                }}
                 title={'Show Results'}
                 style={{
                   backgroundColor: '#1C75BC',
@@ -299,7 +336,7 @@ const App = ({navigation}) => {
               <Text
                 style={[
                   styles.professionals,
-                  {marginTop: 20, fontSize: 20, alignSelf: 'center'},
+                  {marginTop: 20, fontSize: 18, alignSelf: 'flex-end'},
                 ]}>
                 Clear
               </Text>
@@ -323,8 +360,9 @@ const styles = StyleSheet.create({
     marginTop: 30,
   },
   label: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 17,
+    fontFamily: 'Poppins-SemiBold',
+    color: '#000',
   },
   nobeContainer: {
     backgroundColor: 'white',
@@ -347,30 +385,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     marginVertical: 10,
-    borderRadius: 10,
+    borderRadius: 15,
     marginHorizontal: 10,
     alignItems: 'center',
-    justifyContent: 'center',
+    // justifyContent: 'center',
     // flexDirection: 'row',
     // justifyContent: 'space-between',
   },
-  imageContainer: {
-    height: 100,
-    width: 100,
-    // backgroundColor: '#d3d3d3',
-    // borderWidth: 0.5,
-    // borderColor: '#ccc',
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: 10,
-  },
+
   image: {
     height: 80,
     width: 80,
     resizeMode: 'contain',
     borderRadius: 50,
-    marginVertical: 10,
+    marginTop: 20,
   },
   details: {
     margin: 10,
@@ -382,6 +410,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
     color: '##10274F',
     marginBottom: 4,
+    textAlign: 'center',
   },
   address: {
     color: 'grey',
@@ -413,6 +442,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    bottom: 10,
   },
   lastContainer: {
     margin: 10,
@@ -420,21 +450,13 @@ const styles = StyleSheet.create({
   },
 
   triangle: {
-    width: 30,
-    height: 30,
-    borderTopRightRadius: 10,
-    // borderLeftWidth: 80,
-    borderTopWidth: 80,
-    borderLeftWidth: 0,
-
-    borderStyle: 'solid',
-    backgroundColor: 'green',
-    borderLeftColor: 'transparent',
-    borderTopColor: 'green',
-    borderBottomColor: 'white',
     alignSelf: 'flex-end',
-
+    height: 60,
+    width: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
     // alignItems: 'center',
+    position: 'absolute',
   },
   status: {
     height: 30,

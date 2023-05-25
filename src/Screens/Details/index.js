@@ -25,6 +25,7 @@ import ReviewItem from '../../components/Reviews';
 import CustomRatingBar from '../../components/RatingBar';
 import Hours from '../../components/Hours';
 import Button from '../../components/Button';
+import {handleAPIRequest} from '../../Helper/ApiHandler';
 
 const reviewsData = [
   {
@@ -127,7 +128,9 @@ const App = ({navigation, route}) => {
   const [selected, setSelected] = useState([]);
   const [index, setIndex] = useState('Hours');
   const [scroll, setScroll] = useState(false);
-  const [pro,setPro] = useState(null)
+
+  const [item, setItem] = useState(null);
+  const [pro, setPro] = useState(null);
 
   const [routes, setRoutes] = React.useState([
     // {key: 'first1', title: 'Licenses'},
@@ -140,22 +143,42 @@ const App = ({navigation, route}) => {
     },
   ]);
 
+  useEffect(() => {
+    handleAPIRequest('get', `pros/${proId}`, null)
+      .then(response => {
+        if (response) {
+          // dispatch(getAllPros(response));
+          console.warn(
+            hoursToArray(response.data.user.pro_profile.working_hours),
+            'fakjfbruyebfeyrty',
+          );
 
-  useEffect(()=>{
-    handleAPIRequest('get', '`${}`', null)
-    .then(response => {
-      if (response) {
-        dispatch(getAllPros(response));
-        // AsyncStorage.setItem('User', JSON.stringify(response.user));
-      }
+          setItem(response.data.user);
+          // AsyncStorage.setItem('User', JSON.stringify(response.user));
+        }
+      })
+      .catch(e => {
+        console.log(e);
+      });
+  }, []);
 
-      console.log(profressionals, 'fafajfeyyfe');
-    })
-    .catch(e => {
-      console.log(e);
-    });
+  const hoursToArray = data => {
+    const hours = data;
 
-  },[])
+    const hoursArray = Object.keys(hours.hours).map(day => ({
+      day,
+      open: hours.hours[day].open,
+      close: hours.hours[day].close,
+    }));
+
+    if (hoursArray.length) {
+      console.warn(hoursArray, 'fakjfeeyeyeyeyeyeywwtwt');
+
+      return hoursArray;
+    } else {
+      return [];
+    }
+  };
 
   const handlePress = id => {
     setSelected(prevState => {
@@ -191,199 +214,216 @@ const App = ({navigation, route}) => {
 
   return (
     <Layout>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        scrollEnabled={scroll}
-        style={{marginTop: 20}}>
-        <View style={styles.itemContainer}>
-          <View
-            style={{
-              flexDirection: 'row',
-            }}>
-            <View style={styles.imageContainer}>
-              <Image
-                style={styles.image}
-                source={require('../../assets/images/pro.png')}
-              />
-            </View>
-            <View style={styles.details}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}>
-                <Text style={styles.name}>Mathew Bryant</Text>
-                <View style={styles.status}>
-                  <Icon name="verified" color={'#FFFFFF'} size={14} />
-                </View>
-              </View>
-              <Text style={styles.address}>Islamabad Pakistan</Text>
-              <Text style={styles.rates}>$12/Hour,$50/Daily</Text>
-              <Text style={styles.rates}>50 Miles away</Text>
-
-              <View style={styles.ratingContainer}>
-                <Text style={styles.rating}>4.8</Text>
-                <Rating
-                  // onFinishRating={this.ratingCompleted}
-                  imageSize={20}
-                  style={{marginVertical: 2}}
+      {item && (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={scroll}
+          style={{marginTop: 20}}>
+          <View style={styles.itemContainer}>
+            <View
+              style={{
+                flexDirection: 'row',
+              }}>
+              <View style={styles.imageContainer}>
+                <Image
+                  style={styles.image}
+                  source={require('../../assets/images/pro.png')}
                 />
               </View>
+              <View style={styles.details}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}>
+                  <Text style={styles.name}>
+                    {item.firstname} {item.lastname}
+                  </Text>
+                  <View style={styles.status}>
+                    <Icon name="verified" color={'#FFFFFF'} size={14} />
+                  </View>
+                </View>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                  }}>
+                  {item.licenses.map((item, index) => (
+                    <Text style={styles.address}>{item.abbrev}, </Text>
+                  ))}
+                </View>
+                <Text style={styles.rates}>
+                  Rates: $
+                  {item.pro_profile ? item.pro_profile.hourly_rate : '0'}
+                  /Hour, ${item.pro_profile ? item.pro_profile.daily_rate : '0'}
+                  /Daily
+                </Text>
+                <Text style={styles.rates}>
+                  Radius : {item.radius ? item.radius : 0} miles away
+                </Text>
+
+                <View style={styles.ratingContainer}>
+                  <Text style={styles.rating}>4.8</Text>
+                  <Rating
+                    // onFinishRating={this.ratingCompleted}
+                    imageSize={20}
+                    style={{marginVertical: 2}}
+                  />
+                </View>
+              </View>
             </View>
-          </View>
-          <View style={{height: 10}} />
+            <View style={{height: 10}} />
 
-          <Text style={styles.aboutName}>About Mathew</Text>
+            <Text style={styles.aboutName}>About {item.firstname}</Text>
 
-          <Text
-            style={[
-              styles.address,
-              {textAlign: 'center', padding: 5, lineHeight: 25},
-            ]}>
-            Lorem Ipsum is simply dummy text of the printing and typesetting
-            industry. Lorem Ipsum has been the industry's standard dummy text
-            ever since the 1500s, when an unknown printer took a galley of type
-            and scrambled it to make a type specimen book
-          </Text>
-          {/* <Button title={'Contact this pro'} color="#1C75BC" /> */}
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              marginVertical: 10,
-            }}>
-            <TouchableOpacity
-              onPress={() => {
-                navigation.navigate('Appointment');
-              }}
+            <Text
+              style={[
+                styles.address,
+                {textAlign: 'center', padding: 5, lineHeight: 25},
+              ]}>
+              {item.about_me ? item.about_me : 'Nothing'}
+            </Text>
+            {/* <Button title={'Contact this pro'} color="#1C75BC" /> */}
+            <View
               style={{
-                backgroundColor: '#1C75BC',
-                width: 150,
-                height: 45,
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderRadius: 6,
-                marginHorizontal: 10,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                marginVertical: 10,
               }}>
-              <Text style={{fontFamily: 'Poppins-Regular', color: '#fff'}}>
-                Make Offer
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{
-                backgroundColor: '#1C75BC',
-                width: 150,
-                height: 45,
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderRadius: 6,
-                marginHorizontal: 10,
-              }}>
-              <Text style={{fontFamily: 'Poppins-Regular', color: '#fff'}}>
-                Contact
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <View
-            style={{
-              backgroundColor: 'white',
-
-              borderWidth: 0.5,
-              borderColor: '#ccc',
-              height: 60,
-              elevation: 4,
-              marginBottom: 10,
-
-              justifyContent: 'space-around',
-
-              flexDirection: 'row',
-            }}>
-            {routes.map(route => (
               <TouchableOpacity
                 onPress={() => {
-                  setIndex(route.title);
-                  if (route.title === 'Schedule') {
-                    setScroll(true);
-                  }
+                  navigation.navigate('Appointment');
                 }}
                 style={{
-                  flexDirection: 'row',
+                  backgroundColor: '#1C75BC',
+                  width: 150,
+                  height: 45,
                   justifyContent: 'center',
-                  borderBottomWidth: index === route.title ? 2 : 0,
-                  width: Dimensions.get('window').width / 4,
-                  borderBottomColor:
-                    index === route.title ? '#1C75BC' : 'white',
                   alignItems: 'center',
+                  borderRadius: 6,
+                  marginHorizontal: 10,
                 }}>
-                <Text
-                  allowFontScaling={false}
-                  style={{
-                    color: '#000',
-                    fontSize: 15,
-                    textAlign: 'center',
-
-                    fontFamily: 'Poppins-SemiBold',
-                    margin: 8,
-                  }}>
-                  {route.title}
+                <Text style={{fontFamily: 'Poppins-Regular', color: '#fff'}}>
+                  Make Offer
                 </Text>
               </TouchableOpacity>
-            ))}
-          </View>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#1C75BC',
+                  width: 150,
+                  height: 45,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  borderRadius: 6,
+                  marginHorizontal: 10,
+                }}>
+                <Text style={{fontFamily: 'Poppins-Regular', color: '#fff'}}>
+                  Contact
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View
+              style={{
+                backgroundColor: 'white',
 
-          {index === 'Hours' && (
-            <ScrollView>
-              <Hours />
-              <View style={{height: 50}} />
-            </ScrollView>
-          )}
-          {index === 'Schedule' && (
-            <Calendar
-              // Customize the appearance of the calendar
-              style={
-                {
-                  // borderWidth: 1,
-                  // borderColor: 'gray',
-                  // width: 200,
+                borderWidth: 0.5,
+                borderColor: '#ccc',
+                height: 60,
+
+                marginBottom: 10,
+
+                justifyContent: 'space-around',
+
+                flexDirection: 'row',
+              }}>
+              {routes.map(route => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setIndex(route.title);
+                    if (route.title === 'Schedule') {
+                      setScroll(true);
+                    }
+                  }}
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    borderBottomWidth: index === route.title ? 2 : 0,
+                    width: Dimensions.get('window').width / 4,
+                    borderBottomColor:
+                      index === route.title ? '#1C75BC' : 'white',
+                    alignItems: 'center',
+                  }}>
+                  <Text
+                    allowFontScaling={false}
+                    style={{
+                      color: '#000',
+                      fontSize: 15,
+                      textAlign: 'center',
+
+                      fontFamily: 'Poppins-SemiBold',
+                      margin: 8,
+                    }}>
+                    {route.title}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {index === 'Hours' && (
+              <ScrollView>
+                <Hours
+                  workingHours={hoursToArray(item.pro_profile.working_hours)}
+                />
+                <View style={{height: 50}} />
+              </ScrollView>
+            )}
+            {index === 'Schedule' && (
+              <Calendar
+                // Customize the appearance of the calendar
+                style={
+                  {
+                    // borderWidth: 1,
+                    // borderColor: 'gray',
+                    // width: 200,
+                  }
                 }
-              }
-              // Specify the current date
-              current={'2023-04-06'}
-              theme={{
-                arrowColor: '#1C75BC',
-              }}
-              // Callback that gets called when the user selects a day
-              onDayPress={day => {
-                console.log('selected day', day);
-              }}
-              // Mark specific dates as marked
-              markedDates={{
-                '2023-04-06': {
-                  selected: true,
-                  marked: true,
-                  selectedColor: '#1C75BC',
-                },
-                '2012-03-02': {marked: true},
-                '2012-03-03': {
-                  selected: true,
-                  marked: true,
-                  selectedColor: '#1C75BC',
-                },
-              }}
-            />
-          )}
+                // Specify the current date
+                current={'2023-04-06'}
+                theme={{
+                  arrowColor: '#1C75BC',
+                }}
+                // Callback that gets called when the user selects a day
+                onDayPress={day => {
+                  console.log('selected day', day);
+                }}
+                // Mark specific dates as marked
+                markedDates={{
+                  '2023-04-06': {
+                    selected: true,
+                    marked: true,
+                    selectedColor: '#1C75BC',
+                  },
+                  '2012-03-02': {marked: true},
+                  '2012-03-03': {
+                    selected: true,
+                    marked: true,
+                    selectedColor: '#1C75BC',
+                  },
+                }}
+              />
+            )}
 
-          {index === 'Reviews' && (
-            <FlatList
-              data={reviewsData}
-              renderItem={renderReviews}
-              keyExtractor={item => item.id}
-            />
-          )}
+            {index === 'Reviews' && (
+              <FlatList
+                data={reviewsData}
+                renderItem={renderReviews}
+                keyExtractor={item => item.id}
+              />
+            )}
 
-          <View style={{height: 20}} />
-        </View>
-      </ScrollView>
+            <View style={{height: 20}} />
+          </View>
+        </ScrollView>
+      )}
     </Layout>
   );
 };

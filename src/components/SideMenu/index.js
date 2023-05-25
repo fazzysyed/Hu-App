@@ -32,10 +32,11 @@ const CustomSidebarMenu = props => {
           borderWidth: 2,
           borderColor: '#1C75BC',
           alignSelf: 'center',
+          marginVertical: 10,
         }}
       />
       <Text style={styles.userName}>Faraz Syed</Text>
-      <DrawerContentScrollView style={{bottom: 30}} {...props}>
+      <DrawerContentScrollView {...props}>
         <DrawerItemList {...props} />
         <DrawerItem
           style={{fontFamily: 'Poppins-Regular'}}

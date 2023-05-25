@@ -43,6 +43,7 @@ const index = ({logo, back, title, search, navigation}) => {
 const styles = StyleSheet.create({
   container: {
     height: 40,
+    marginVertical: 10,
 
     // borderBottomWidth: 0.4,
     // backgroundColor: 'red',

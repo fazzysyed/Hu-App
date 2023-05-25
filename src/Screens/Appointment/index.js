@@ -98,8 +98,6 @@ const Appointment = ({navigation, route}) => {
             marginHorizontal: 10,
             marginVertical: 5,
 
-            elevation: 5,
-
             padding: 8,
 
             // zIndex: Platform.OS === 'ios' ? 10 : null,
@@ -318,7 +316,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginVertical: 5,
     marginBottom: 15,
-    elevation: 5,
+
     borderWidth: 0.6,
     borderColor: '#ccc',
 
@@ -356,7 +354,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginHorizontal: 20,
     marginVertical: 5,
-    elevation: 5,
+
     borderWidth: 0.6,
     borderColor: '#ccc',
     justifyContent: 'space-between',
@@ -398,7 +396,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginHorizontal: 20,
     marginVertical: 5,
-    elevation: 5,
+
     borderWidth: 0.6,
     borderColor: '#ccc',
     justifyContent: 'space-between',

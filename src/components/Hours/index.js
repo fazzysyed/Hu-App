@@ -1,36 +1,19 @@
 import React from 'react';
 import {StyleSheet, View, Text} from 'react-native';
+import {Item} from 'react-native-paper/lib/typescript/src/components/Drawer/Drawer';
 
-const WeeklyWorkingHours = () => {
-  const daysOfWeek = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-  ];
-
-  const workingHours = [
-    {day: 'Monday', hours: '8:00 AM - 5:00 PM'},
-    {day: 'Tuesday', hours: '8:00 AM - 5:00 PM'},
-    {day: 'Wednesday', hours: '8:00 AM - 5:00 PM'},
-    {day: 'Thursday', hours: '8:00 AM - 5:00 PM'},
-    {day: 'Friday', hours: '8:00 AM - 5:00 PM'},
-    {day: 'Saturday', hours: '10:00 AM - 3:00 PM'},
-    {day: 'Sunday', hours: 'Closed'},
-  ];
-
+const WeeklyWorkingHours = ({workingHours}) => {
   return (
     <View style={styles.container}>
       {/* <Text style={styles.title}>Weekly Working Hours</Text> */}
       <View style={styles.table}>
-        {daysOfWeek.map(day => (
+        {workingHours.map(day => (
           <View key={day} style={styles.row}>
-            <Text style={styles.cell}>{day}</Text>
+            <Text style={styles.cell}>{day.day}</Text>
             <Text style={styles.cell}>
-              {workingHours.find(item => item.day === day).hours}
+              {day.open != 0 && day.close != 0
+                ? `${day.open} -${day.close}`
+                : 'closed'}
             </Text>
           </View>
         ))}
