@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>336940865892-q9fjgmpf22sv3maalr12qktenuh2su7l.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.336940865892-q9fjgmpf22sv3maalr12qktenuh2su7l</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDXE6VU3lPL_4RssHEktZF-vdo2AlUV3FQ</string>
+	<key>GCM_SENDER_ID</key>
+	<string>336940865892</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.healthcareup.ios</string>
+	<key>PROJECT_ID</key>
+	<string>healthcareup-app</string>
+	<key>STORAGE_BUCKET</key>
+	<string>healthcareup-app.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:336940865892:ios:9f2da9d0466bd46522c271</string>
+</dict>
+</plist>

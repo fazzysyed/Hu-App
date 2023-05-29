@@ -52,7 +52,7 @@ const licenseData = [
   {id: '3', type: 'Type 3', number: '24680', state: 'Active'},
   {id: '4', type: 'Type 4', number: '13579', state: 'Inactive'},
 ];
-const ProfileScreen = () => {
+const ProfileScreen = ({navigation}) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -307,8 +307,11 @@ const ProfileScreen = () => {
           </View>
           <Right
             onPress={() => {
-              setIndex('addresses');
+              setIndex('address');
               handlePresentModalPress();
+              // navigation.navigate('address', {
+              //   addresses: userProfile.addresses,
+              // });
             }}
             name="chevron-right"
             size={30}
@@ -495,7 +498,7 @@ const ProfileScreen = () => {
             </ScrollView>
           )}
 
-          {index === 'addresses' && (
+          {index === 'address' && (
             <View style={{flex: 1}}>
               <Text
                 style={[styles.userName, {marginVertical: 20, fontSize: 23}]}>
@@ -578,6 +581,14 @@ const ProfileScreen = () => {
                   </View>
                 )}
               />
+              <View style={{bottom: 40}}>
+                <Button
+                  title={'Add New'}
+                  onPress={() => {
+                    setAddLicense(true);
+                  }}
+                />
+              </View>
             </View>
           )}
 
@@ -722,12 +733,14 @@ const ProfileScreen = () => {
                 keyExtractor={item => item.id}
                 contentContainerStyle={{height: 200}}
               />
-              <Button
-                title={'Add New'}
-                onPress={() => {
-                  setAddLicense(true);
-                }}
-              />
+              <View style={{bottom: 40}}>
+                <Button
+                  title={'Add New'}
+                  onPress={() => {
+                    setAddLicense(true);
+                  }}
+                />
+              </View>
             </View>
           )}
         </BottomSheetModal>

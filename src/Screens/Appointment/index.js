@@ -24,9 +24,10 @@ import Time from 'react-native-vector-icons/Ionicons';
 import Layout from '../../components/Layout';
 import Header from '../../components/Header';
 import Button from '../../components/Button';
+import {handleAPIRequest} from '../../Helper/ApiHandler';
 
 const Appointment = ({navigation, route}) => {
-  //   const {door_id} = route.params;
+  const {uuid} = route.params;
 
   const [isDatePickerVisible, setIsDataPickerVisible] = useState(false);
   const [timeModal, setTimeModal] = useState(false);
@@ -36,30 +37,56 @@ const Appointment = ({navigation, route}) => {
   const [startTime, setStartTime] = useState('');
   const [currentDate, setCurrentData] = useState('');
   const [loading, setLoading] = useState(false);
+  const [location, setLocation] = useState('');
+  const [price, setPrice] = useState('');
+  const [description, setDescription] = useState('');
 
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
   const [items, setItems] = useState([
-    {label: 'January', value: 'January'},
-    {label: 'February', value: 'February'},
-    {label: 'March', value: 'March'},
-    {label: 'April', value: 'April'},
-    {label: 'May', value: 'May'},
-    {label: 'June', value: 'June'},
-    {label: 'July', value: 'July'},
-    {label: 'August', value: 'August'},
-    {label: 'September', value: 'September'},
-    {label: 'October', value: 'October'},
-    {label: 'November', value: 'November'},
-    {label: 'December', value: 'December'},
+    {label: 'Hour', value: 'Hour'},
+    {label: 'Job', value: 'Job'},
+    // {label: 'March', value: 'March'},
+    // {label: 'April', value: 'April'},
+    // {label: 'May', value: 'May'},
+    // {label: 'June', value: 'June'},
+    // {label: 'July', value: 'July'},
+    // {label: 'August', value: 'August'},
+    // {label: 'September', value: 'September'},
+    // {label: 'October', value: 'October'},
+    // {label: 'November', value: 'November'},
+    // {label: 'December', value: 'December'},
   ]);
 
-  const makeAppointment = () => {};
+  const makeAppointment = () => {
+    let data = {
+      uuid: uuid,
+      start_date: startTime,
+      end_date: endTime,
+      pay_rate: price,
+      pay_duration: value,
+      location: location,
+      description: description,
+    };
+    console.warn(data);
+    handleAPIRequest('post', 'reservation', data)
+      .then(response => {
+        if (response) {
+          dispatch(setUser(response.user));
+          console.log(response.user);
+          AsyncStorage.setItem('User', JSON.stringify(response.user));
+        }
+      })
+      .catch(e => {
+        console.log(e.response);
+      });
+  };
 
   const handleConfirmStartTime = date => {
+    console.warn(date);
     let timeStringLocal = moment(date).format('DD-MM-YYYY'); // "10:00"
 
-    setStartTime(timeStringLocal);
+    // setStartTime(date);
     setTimeModal(false);
   };
 
@@ -69,7 +96,7 @@ const Appointment = ({navigation, route}) => {
     // setEndTimeModal(false);
     // console.log(timeStringLocal, 'Time', date);
     let timeStringLocal = moment(date).format('DD-MM-YYYY');
-    setEndTime(timeStringLocal);
+    setEndTime(date);
     setEndTimeModal(false);
   };
   const handleConfirmDate = date => {
@@ -89,46 +116,7 @@ const Appointment = ({navigation, route}) => {
       <View style={styles.spacingTop}>
         {/* <Image source={Constants.MEETING} style={styles.meeting} /> */}
 
-        <Text style={styles.make}>Make an Appointment</Text>
-
-        <View
-          style={{
-            backgroundColor: '#ffffff',
-            borderRadius: 5,
-            marginHorizontal: 10,
-            marginVertical: 5,
-
-            padding: 8,
-
-            // zIndex: Platform.OS === 'ios' ? 10 : null,
-            zIndex: Platform.OS === 'ios' ? 10 : 100,
-          }}>
-          <Text
-            allowFontScaling={false}
-            style={{
-              color: 'grey',
-              fontFamily: 'Poppins-Bold',
-              marginTop: 10,
-              marginBottom: 5,
-
-              fontSize: 15,
-            }}>
-            {'Month'}
-          </Text>
-
-          <DropDownPicker
-            dropDownDirection="BOTTOM"
-            style={{borderColor: '#E4E4E4', fontFamily: 'Poppins-Regular'}}
-            placeholder="Select Type"
-            placeholderStyle={{fontFamily: 'Poppins-SemiBold', color: 'grey'}}
-            open={open}
-            value={value}
-            items={items}
-            setOpen={setOpen}
-            setValue={setValue}
-            setItems={setItems}
-          />
-        </View>
+        <Text style={styles.make}>Make a Reservation</Text>
 
         <View style={styles.startEndContainer}>
           <View style={{width: '50%'}}>
@@ -188,7 +176,8 @@ const Appointment = ({navigation, route}) => {
         <View style={styles.currentDate}>
           <Input
             placeholder={'Location'}
-            value={'location'}
+            value={location}
+            onChangeText={text => setLocation(text)}
             // errorMessage={errorMessage}
             inputContainerStyle={{borderBottomWidth: 0}}
             // onChangeText={text => onChangeText(text)}
@@ -207,8 +196,9 @@ const Appointment = ({navigation, route}) => {
         </Text>
         <View style={styles.currentDate}>
           <Input
-            placeholder={'Location'}
-            value={'Price'}
+            placeholder={'Price'}
+            value={price}
+            onChangeText={text => setPrice(text)}
             // errorMessage={errorMessage}
             inputContainerStyle={{borderBottomWidth: 0}}
             // onChangeText={text => onChangeText(text)}
@@ -221,6 +211,44 @@ const Appointment = ({navigation, route}) => {
             ]}
           />
         </View>
+        <View
+          style={{
+            backgroundColor: '#ffffff',
+            borderRadius: 5,
+            marginHorizontal: 10,
+            marginVertical: 5,
+
+            padding: 8,
+
+            // zIndex: Platform.OS === 'ios' ? 10 : null,
+            zIndex: Platform.OS === 'ios' ? 10 : 100,
+          }}>
+          <Text
+            allowFontScaling={false}
+            style={{
+              color: 'grey',
+              fontFamily: 'Poppins-Bold',
+
+              marginBottom: 5,
+
+              fontSize: 15,
+            }}>
+            {'Pay Duration'}
+          </Text>
+
+          <DropDownPicker
+            dropDownDirection="BOTTOM"
+            style={{borderColor: '#E4E4E4', fontFamily: 'Poppins-Regular'}}
+            placeholder="Select Type"
+            placeholderStyle={{fontFamily: 'Poppins-SemiBold', color: 'grey'}}
+            open={open}
+            value={value}
+            items={items}
+            setOpen={setOpen}
+            setValue={setValue}
+            setItems={setItems}
+          />
+        </View>
 
         <Text allowFontScaling={false} style={styles.dateText}>
           Description
@@ -228,7 +256,8 @@ const Appointment = ({navigation, route}) => {
         <View style={styles.currentDate}>
           <Input
             placeholder={'Description'}
-            value={'Price'}
+            value={description}
+            onChangeText={text => setDescription(text)}
             // errorMessage={errorMessage}
             inputContainerStyle={{borderBottomWidth: 0}}
             // onChangeText={text => onChangeText(text)}
@@ -236,7 +265,7 @@ const Appointment = ({navigation, route}) => {
             style={[
               styles.input,
               {
-                height: 100,
+                height: 50,
               },
             ]}
           />

@@ -103,6 +103,7 @@ const App = ({navigation}) => {
     handleAPIRequest('get', 'pros', null)
       .then(response => {
         if (response) {
+          // console.warn(response);
           dispatch(getAllPros(response));
           // AsyncStorage.setItem('User', JSON.stringify(response.user));
         }

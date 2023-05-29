@@ -147,11 +147,12 @@ const App = ({navigation, route}) => {
     handleAPIRequest('get', `pros/${proId}`, null)
       .then(response => {
         if (response) {
+          console.log(response);
           // dispatch(getAllPros(response));
-          console.warn(
-            hoursToArray(response.data.user.pro_profile.working_hours),
-            'fakjfbruyebfeyrty',
-          );
+          // console.warn(
+          //   hoursToArray(response.data.user.pro_profile.working_hours),
+          //   'fakjfbruyebfeyrty',
+          // );
 
           setItem(response.data.user);
           // AsyncStorage.setItem('User', JSON.stringify(response.user));
@@ -291,7 +292,9 @@ const App = ({navigation, route}) => {
               }}>
               <TouchableOpacity
                 onPress={() => {
-                  navigation.navigate('Appointment');
+                  navigation.navigate('Appointment', {
+                    uuid: proId,
+                  });
                 }}
                 style={{
                   backgroundColor: '#1C75BC',
@@ -369,12 +372,18 @@ const App = ({navigation, route}) => {
             </View>
 
             {index === 'Hours' && (
-              <ScrollView>
-                <Hours
-                  workingHours={hoursToArray(item.pro_profile.working_hours)}
-                />
-                <View style={{height: 50}} />
-              </ScrollView>
+              <>
+                {item.pro_profile.working_hours && (
+                  <ScrollView>
+                    <Hours
+                      workingHours={hoursToArray(
+                        item.pro_profile.working_hours,
+                      )}
+                    />
+                    <View style={{height: 50}} />
+                  </ScrollView>
+                )}
+              </>
             )}
             {index === 'Schedule' && (
               <Calendar

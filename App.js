@@ -28,6 +28,8 @@ import {createStackNavigator} from '@react-navigation/stack';
 import Appointment from './src/Screens/Appointment';
 import {createDrawerNavigator} from '@react-navigation/drawer';
 import ProfileScreen from './src/Screens/Profile';
+import Address from './src/Screens/Addresses';
+
 import CustomSidebarMenu from './src/components/SideMenu';
 import {useSelector} from 'react-redux';
 
@@ -107,6 +109,11 @@ const App = () => {
         <STACK.Screen
           component={Appointment}
           name="Appointment"
+          options={{headerShown: null}}
+        />
+        <STACK.Screen
+          component={Address}
+          name="Address"
           options={{headerShown: null}}
         />
       </STACK.Navigator>
