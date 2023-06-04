@@ -110,7 +110,9 @@ const App = ({navigation}) => {
 
         console.log(profressionals, 'fafajfeyyfe');
       })
-      .catch(e => {});
+      .catch(e => {
+        console.log(e, 'alkfalfkjalfksj');
+      });
   }, []);
 
   const handlePress = id => {
@@ -240,111 +242,110 @@ const App = ({navigation}) => {
             )}
           />
         </View>
+      </Layout>
+      {/* <BottomSheetModal
+        ref={bottomSheetModalRef}
+        index={1}
+        snapPoints={snapPoints}
+        onChange={handleSheetChanges}>
+        <View style={styles.contentContainer}>
+          <Text style={styles.label}>Hourly Rate</Text>
+          <View
+            style={{
+              marginTop: 10,
+              alignSelf: 'center',
+            }}>
+            <MultiSlider
+              sliderLength={330}
+              selectedStyle={{
+                backgroundColor: '#1C75BC',
+              }}
+              unselectedStyle={{
+                backgroundColor: '#ccc',
+              }}
+              containerStyle={{
+                height: 40,
+              }}
+              trackStyle={{
+                height: 3,
+                backgroundColor: '#1C75BC',
+              }}
+              touchDimensions={{
+                height: 40,
+                width: 40,
+                borderRadius: 20,
+                slipDisplacement: 40,
+              }}
+              values={[0, 100]}
+              enableLabel
+              customLabel={CustomLabel}
+              customMarker={e => {
+                return (
+                  <View
+                    style={styles.nobeContainer}
+                    currentValue={e.currentValue}></View>
+                );
+              }}
+            />
+          </View>
+          <View style={{marginTop: 20}}>
+            <Text style={styles.label}>License Type</Text>
 
-        <BottomSheetModal
-          ref={bottomSheetModalRef}
-          index={1}
-          snapPoints={snapPoints}
-          onChange={handleSheetChanges}>
-          <View style={styles.contentContainer}>
-            <Text style={styles.label}>Hourly Rate</Text>
-            <View
-              style={{
-                marginTop: 10,
-                alignSelf: 'center',
-              }}>
-              <MultiSlider
-                sliderLength={330}
-                selectedStyle={{
-                  backgroundColor: '#1C75BC',
-                }}
-                unselectedStyle={{
-                  backgroundColor: '#ccc',
-                }}
-                containerStyle={{
-                  height: 40,
-                }}
-                trackStyle={{
-                  height: 3,
-                  backgroundColor: '#1C75BC',
-                }}
-                touchDimensions={{
-                  height: 40,
-                  width: 40,
-                  borderRadius: 20,
-                  slipDisplacement: 40,
-                }}
-                values={[0, 100]}
-                enableLabel
-                customLabel={CustomLabel}
-                customMarker={e => {
-                  return (
-                    <View
-                      style={styles.nobeContainer}
-                      currentValue={e.currentValue}></View>
-                  );
-                }}
+            <View style={{marginTop: 20}}>
+              <FlatList
+                data={DATA}
+                renderItem={renderItem}
+                keyExtractor={item => item.id}
+                numColumns={3}
               />
             </View>
+          </View>
+          <View style={{marginTop: 20}}>
+            <Text style={styles.label}>Tags</Text>
             <View style={{marginTop: 20}}>
-              <Text style={styles.label}>License Type</Text>
-
-              <View style={{marginTop: 20}}>
-                <FlatList
-                  data={DATA}
-                  renderItem={renderItem}
-                  keyExtractor={item => item.id}
-                  numColumns={3}
-                />
-              </View>
-            </View>
-            <View style={{marginTop: 20}}>
-              <Text style={styles.label}>Tags</Text>
-              <View style={{marginTop: 20}}>
-                <FlatList
-                  data={DATA}
-                  renderItem={renderItem}
-                  keyExtractor={item => item.id}
-                  numColumns={3}
-                />
-              </View>
-            </View>
-            <View style={{flexDirection: 'row'}}>
-              <TouchableOpacity
-                onPress={() => {
-                  bottomSheetModalRef.current?.close();
-                }}
-                title={'Show Results'}
-                style={{
-                  backgroundColor: '#1C75BC',
-                  height: 50,
-                  borderRadius: 5,
-                  justifyContent: 'center',
-
-                  alignItems: 'center',
-                  width: '80%',
-                  marginTop: 10,
-                }}>
-                <Text
-                  style={{
-                    color: '#fff',
-                    fontSize: 17,
-                    fontFamily: 'Poppins-Regular',
-                  }}>
-                  Show Results
-                </Text>
-              </TouchableOpacity>
-              <Text
-                style={[
-                  styles.professionals,
-                  {marginTop: 20, fontSize: 18, alignSelf: 'flex-end'},
-                ]}>
-                Clear
-              </Text>
+              <FlatList
+                data={DATA}
+                renderItem={renderItem}
+                keyExtractor={item => item.id}
+                numColumns={3}
+              />
             </View>
           </View>
-        </BottomSheetModal>
-      </Layout>
+          <View style={{flexDirection: 'row'}}>
+            <TouchableOpacity
+              onPress={() => {
+                bottomSheetModalRef.current?.close();
+              }}
+              title={'Show Results'}
+              style={{
+                backgroundColor: '#1C75BC',
+                height: 50,
+                borderRadius: 5,
+                justifyContent: 'center',
+
+                alignItems: 'center',
+                width: '80%',
+                marginTop: 10,
+              }}>
+              <Text
+                style={{
+                  color: '#fff',
+                  fontSize: 17,
+                  fontFamily: 'Poppins-Regular',
+                }}>
+                Show Results
+              </Text>
+            </TouchableOpacity>
+            <Text
+              style={[
+                styles.professionals,
+                {marginTop: 20, fontSize: 18, alignSelf: 'flex-end'},
+              ]}>
+              Clear
+            </Text>
+          </View>
+        </View>
+      </BottomSheetModal> */}
     </BottomSheetModalProvider>
   );
 };
@@ -409,7 +410,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 17,
     fontFamily: 'Poppins-SemiBold',
-    color: '##10274F',
+    color: '#10274F',
     marginBottom: 4,
     textAlign: 'center',
   },

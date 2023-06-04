@@ -29,14 +29,23 @@ import Appointment from './src/Screens/Appointment';
 import {createDrawerNavigator} from '@react-navigation/drawer';
 import ProfileScreen from './src/Screens/Profile';
 import Address from './src/Screens/Addresses';
+import Chat from './src/Screens/Chat';
 
 import CustomSidebarMenu from './src/components/SideMenu';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import TermsAndConditionsScreen from './src/Screens/Terms';
+import Reservation from 'react-native-calendars/src/agenda/reservation-list/reservation';
+import Reservations from './src/Screens/Reservations';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {setUser} from './src/Store/Actions/Actions';
+import ReservationDetails from './src/Screens/ReservationDetails';
 
 const STACK = createStackNavigator();
 const Drawer = createDrawerNavigator();
 
 const App = () => {
+  const isLoggedIn = useSelector(state => state.Reducer.user);
+  const dispatch = useDispatch();
   const darkTheme = {
     ...DefaultTheme,
     roundness: 2,
@@ -72,7 +81,17 @@ const App = () => {
   const systemTheme = useColorScheme();
   const theme = systemTheme === 'dark' ? darkTheme : lightTheme;
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    getDataAsync();
+  }, []);
+
+  const getDataAsync = async () => {
+    let user = await AsyncStorage.getItem('User');
+
+    if (user) {
+      dispatch(setUser(JSON.parse(user)));
+    }
+  };
 
   const AuthStack = () => {
     return (
@@ -83,11 +102,11 @@ const App = () => {
             name="Login"
             options={{headerShown: null}}
           />
-          <STACK.Screen
+          {/* <STACK.Screen
             component={Register}
             name="Register"
             options={{headerShown: null}}
-          />
+          /> */}
         </>
       </STACK.Navigator>
     );
@@ -97,10 +116,21 @@ const App = () => {
     return (
       <STACK.Navigator>
         <STACK.Screen
-          name="Home"
+          name="Home1"
           component={Home}
           options={{headerShown: null}}
         />
+        {/* <STACK.Screen
+          component={Reservations}
+          name="Reservations"
+          options={{headerShown: null}}
+        />
+        <STACK.Screen
+          component={ReservationDetails}
+          name="ReservationDetails"
+          options={{headerShown: null}}
+        /> */}
+
         <STACK.Screen
           component={Details}
           name="Details"
@@ -112,8 +142,19 @@ const App = () => {
           options={{headerShown: null}}
         />
         <STACK.Screen
+          component={Chat}
+          name="Chat"
+          options={{headerShown: null}}
+        />
+        <STACK.Screen
           component={Address}
           name="Address"
+          options={{headerShown: null}}
+        />
+
+        <STACK.Screen
+          component={TermsAndConditionsScreen}
+          name="Terms"
           options={{headerShown: null}}
         />
       </STACK.Navigator>
@@ -142,7 +183,8 @@ const App = () => {
   return (
     <PaperProvider theme={theme}>
       <NavigationContainer>
-        <AppStack />
+        {/* <AppStack /> */}
+        {isLoggedIn ? <AppStack /> : <AuthStack />}
       </NavigationContainer>
       <FlashMessage position="top" />
     </PaperProvider>

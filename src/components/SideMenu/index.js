@@ -14,11 +14,12 @@ import {
   DrawerItem,
 } from '@react-navigation/drawer';
 import Logout from 'react-native-vector-icons/AntDesign';
+import {useDispatch, useSelector} from 'react-redux';
+import {logout} from '../../Store/Actions/Actions';
 
 const CustomSidebarMenu = props => {
-  const BASE_PATH =
-    'https://raw.githubusercontent.com/AboutReact/sampleresource/master/';
-  const proileImage = 'react_logo.png';
+  const dispatch = useDispatch();
+  const user = useSelector(state => state.Reducer.user);
 
   return (
     <SafeAreaView style={{flex: 1}}>
@@ -35,7 +36,9 @@ const CustomSidebarMenu = props => {
           marginVertical: 10,
         }}
       />
-      <Text style={styles.userName}>Faraz Syed</Text>
+      <Text style={styles.userName}>
+        {user ? `${user.firstname} ${user.lastname}` : 'No Name'}
+      </Text>
       <DrawerContentScrollView {...props}>
         <DrawerItemList {...props} />
         <DrawerItem
@@ -47,7 +50,7 @@ const CustomSidebarMenu = props => {
         <View style={styles.customItem}>
           <Text
             onPress={() => {
-              Linking.openURL('https://healthcare-up.com.com/');
+              dispatch(logout());
             }}>
             Logout
           </Text>

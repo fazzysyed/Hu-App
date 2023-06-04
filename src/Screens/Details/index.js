@@ -310,6 +310,11 @@ const App = ({navigation, route}) => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                onPress={() => {
+                  navigation.navigate('Chat', {
+                    proId: proId,
+                  });
+                }}
                 style={{
                   backgroundColor: '#1C75BC',
                   width: 150,

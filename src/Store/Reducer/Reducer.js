@@ -1,4 +1,4 @@
-import {GET_ALL_PROS, SET_USER} from '../Actions/actionTypes';
+import {GET_ALL_PROS, LOGOUT, SET_USER} from '../Actions/actionTypes';
 
 const initialState = {
   user: null,
@@ -9,6 +9,11 @@ const Reducer = (state = initialState, action) => {
 
   switch (type) {
     case SET_USER:
+      return {
+        ...state,
+        user: payload,
+      };
+    case LOGOUT:
       return {
         ...state,
         user: payload,

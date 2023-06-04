@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
   Platform,
+  Alert,
 } from 'react-native';
 import {Input} from 'react-native-elements';
 
@@ -27,7 +28,7 @@ import Button from '../../components/Button';
 import {handleAPIRequest} from '../../Helper/ApiHandler';
 
 const Appointment = ({navigation, route}) => {
-  const {uuid} = route.params;
+  const {uuid, counter} = route.params;
 
   const [isDatePickerVisible, setIsDataPickerVisible] = useState(false);
   const [timeModal, setTimeModal] = useState(false);
@@ -40,12 +41,15 @@ const Appointment = ({navigation, route}) => {
   const [location, setLocation] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
+  const [time, setTime] = useState(null);
 
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
   const [items, setItems] = useState([
-    {label: 'Hour', value: 'Hour'},
-    {label: 'Job', value: 'Job'},
+    {label: 'Hourly', value: 'hourly'},
+    {label: 'Daily', value: 'daily'},
+    {label: 'Fixed', value: 'fixed'},
+
     // {label: 'March', value: 'March'},
     // {label: 'April', value: 'April'},
     // {label: 'May', value: 'May'},
@@ -82,11 +86,43 @@ const Appointment = ({navigation, route}) => {
       });
   };
 
+  const counterOfferHandler = id => {
+    console.warn(`counter-offer/${id}`, {
+      start_date: startTime,
+      end_date: endTime,
+      pay_rate: price,
+      pay_duration: value,
+      location: location,
+      description: description,
+    });
+    let data = {
+      start_date: startTime,
+      end_date: endTime,
+      pay_rate: price,
+      pay_duration: value,
+      location: location,
+      description: description,
+    };
+    handleAPIRequest('post', `counter-offer/${id}`, data)
+      .then(response => {
+        if (response) {
+          console.warn(response);
+          Alert.alert('Done');
+          // console.warn(response);
+
+          // AsyncStorage.setItem('User', JSON.stringify(response.user));
+        }
+      })
+      .catch(e => {
+        console.log(e, 'Error');
+      });
+  };
+
   const handleConfirmStartTime = date => {
     console.warn(date);
     let timeStringLocal = moment(date).format('DD-MM-YYYY'); // "10:00"
-
-    // setStartTime(date);
+    setTime({...time, startTime: date});
+    setStartTime(timeStringLocal);
     setTimeModal(false);
   };
 
@@ -96,7 +132,8 @@ const Appointment = ({navigation, route}) => {
     // setEndTimeModal(false);
     // console.log(timeStringLocal, 'Time', date);
     let timeStringLocal = moment(date).format('DD-MM-YYYY');
-    setEndTime(date);
+    setTime({...time, endTime: date});
+    setEndTime(timeStringLocal);
     setEndTimeModal(false);
   };
   const handleConfirmDate = date => {
@@ -116,7 +153,9 @@ const Appointment = ({navigation, route}) => {
       <View style={styles.spacingTop}>
         {/* <Image source={Constants.MEETING} style={styles.meeting} /> */}
 
-        <Text style={styles.make}>Make a Reservation</Text>
+        <Text style={styles.make}>
+          {route.params.counter ? 'Make a Counter Offer' : 'Make a Reservation'}{' '}
+        </Text>
 
         <View style={styles.startEndContainer}>
           <View style={{width: '50%'}}>
@@ -271,7 +310,17 @@ const Appointment = ({navigation, route}) => {
           />
         </View>
 
-        <Button title={'Make'} loading={loading} onPress={makeAppointment} />
+        <Button
+          title={'Make'}
+          loading={loading}
+          onPress={() => {
+            if (route.params.counter) {
+              counterOfferHandler(route.params.uuid);
+            } else {
+              makeAppointment();
+            }
+          }}
+        />
 
         {isDatePickerVisible && (
           <DateTimePickerModal
