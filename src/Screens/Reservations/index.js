@@ -8,7 +8,11 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import CheckBox from '../../components/Checkbox';
+import ExtraTerms from '../../components/ExtraTerms';
+
 import Layout from '../../components/Layout';
+import {useFocusEffect} from '@react-navigation/native';
+
 import moment from 'moment';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {handleAPIRequest} from '../../Helper/ApiHandler';
@@ -16,21 +20,27 @@ import Button from '../../components/Button';
 
 const Reservations = ({navigation}) => {
   const [reservations, setReservartions] = useState([]);
+  const [note, setNote] = useState('');
+  const [modal, setModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
-  useEffect(() => {
-    handleAPIRequest('get', 'reservation', null)
-      .then(response => {
-        if (response) {
-          setReservartions(response.data);
-          // console.warn(response);
+  useFocusEffect(
+    React.useCallback(() => {
+      handleAPIRequest('get', 'reservation', null)
+        .then(response => {
+          if (response) {
+            console.log(response.data);
+            setReservartions(response.data);
+            // console.warn(response);
 
-          // AsyncStorage.setItem('User', JSON.stringify(response.user));
-        }
-      })
-      .catch(e => {
-        console.log(e, 'Error');
-      });
-  }, []);
+            // AsyncStorage.setItem('User', JSON.stringify(response.user));
+          }
+        })
+        .catch(e => {
+          console.log(e, 'Error');
+        });
+    }, []),
+  );
 
   const evaluateLabel = label => {
     switch (label) {
@@ -70,6 +80,18 @@ const Reservations = ({navigation}) => {
         );
       default:
         return null;
+    }
+  };
+
+  const handleAccept = () => {
+    if (selectedItem) {
+      handleAPIRequest('post', `accept-offer/${selectedItem.uuid}`, {
+        additional_terms: note,
+      }).then(response => {
+        setNote('');
+        setModal(false);
+        navigation.navigate('Contracts');
+      });
     }
   };
 
@@ -128,11 +150,11 @@ const Reservations = ({navigation}) => {
               height: 10,
               width: 10,
               backgroundColor:
-                item.status === 'opened'
+                item.status === 'open'
                   ? 'green'
                   : item.status === 'closed'
                   ? 'grey'
-                  : 'red',
+                  : 'green',
               borderRadius: 10,
               marginTop: 5,
             }}
@@ -161,7 +183,9 @@ const Reservations = ({navigation}) => {
       </View>
       <Text style={styles.label}>{renderLabel('Description:')}</Text>
       <View style={styles.innerContainer}>
-        <Text style={styles.subTitle}>{item.description}</Text>
+        <Text style={styles.subTitle} numberOfLines={2} ellipsizeMode="tail">
+          {item.description}
+        </Text>
       </View>
       <View style={styles.innerContainer}>
         <Text style={styles.label}>{renderLabel('Created At:')}</Text>
@@ -170,50 +194,59 @@ const Reservations = ({navigation}) => {
         </Text>
       </View>
 
-      {item.counter_offer_counts > 5 ? (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginVertical: 5,
-          }}>
-          {!item.offered_by_me && (
+      {item.status === 'closed' ? null : (
+        <>
+          {item.counter_offer_counts === 0 ? (
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginVertical: 5,
+              }}>
+              {!item.offered_by_me && (
+                <TouchableOpacity
+                  onPress={() => {
+                    navigation.navigate('Appointment', {
+                      uuid: item.uuid,
+                      counter: true,
+                    });
+                  }}
+                  style={styles.button}>
+                  <Text style={styles.buttonTitle}>Re Offer</Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity style={styles.button}>
+                <Text style={styles.buttonTitle}>Chat</Text>
+              </TouchableOpacity>
+              {item.offered_by_me ? (
+                <TouchableOpacity style={styles.button}>
+                  <Text style={styles.buttonTitle}>Update</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedItem(item);
+                    setModal(true);
+                  }}
+                  style={styles.button}>
+                  <Text style={styles.buttonTitle}>Accept</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
             <TouchableOpacity
               onPress={() => {
-                navigation.navigate('Appointment', {
+                navigation.navigate('ReservationDetails', {
                   uuid: item.uuid,
-                  counter: true,
                 });
               }}
-              style={styles.button}>
-              <Text style={styles.buttonTitle}>Re Offer</Text>
+              style={[styles.button, {alignSelf: 'center', width: 150}]}>
+              <Text style={styles.buttonTitle}>View Details</Text>
             </TouchableOpacity>
           )}
-
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonTitle}>Chat</Text>
-          </TouchableOpacity>
-          {item.offered_by_me ? (
-            <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonTitle}>Update</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonTitle}>Accept</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      ) : (
-        <TouchableOpacity
-          onPress={() => {
-            navigation.navigate('ReservationDetails', {
-              uuid: item.uuid,
-            });
-          }}
-          style={[styles.button, {alignSelf: 'center', width: 150}]}>
-          <Text style={styles.buttonTitle}>View Details</Text>
-        </TouchableOpacity>
+        </>
       )}
     </View>
   );
@@ -225,6 +258,16 @@ const Reservations = ({navigation}) => {
         renderItem={renderItem}
         // keyExtractor={item => item.id.toString()}
         contentContainerStyle={styles.container}
+      />
+
+      <ExtraTerms
+        isModalVisible={modal}
+        note={note}
+        setNote={text => setNote(text)}
+        onCancel={() => setModal(false)}
+        onSuccess={() => {
+          handleAccept();
+        }}
       />
     </Layout>
   );

@@ -1,10 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Platform} from 'react-native';
-import {GET_ALL_PROS, SET_USER, LOGOUT} from './actionTypes';
+import {GET_ALL_PROS, SET_USER, LOGOUT, APPLOADING} from './actionTypes';
 
 export const setUser = payload => async dispatch => {
   dispatch({
     type: SET_USER,
+    payload: payload,
+  });
+};
+export const setAppLoading = payload => async dispatch => {
+  dispatch({
+    type: APPLOADING,
     payload: payload,
   });
 };

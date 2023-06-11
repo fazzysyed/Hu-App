@@ -26,6 +26,7 @@ import CustomRatingBar from '../../components/RatingBar';
 import Hours from '../../components/Hours';
 import Button from '../../components/Button';
 import {handleAPIRequest} from '../../Helper/ApiHandler';
+import AnimatedLoader from '../../components/Loader';
 
 const reviewsData = [
   {
@@ -56,78 +57,12 @@ const reviewsData = [
   },
 ];
 
-const data = {
-  uuid: 'b94a089b-6779-47a7-b5e4-9096c78392f3',
-  type: 'pro',
-  agency_id: 5,
-  firstname: 'Faraz',
-  lastname: 'Bryant',
-  status: 'active',
-  about_me: null,
-  verified: 'yes',
-  photo_url: 'dh38JPwORyV0jx8uST2LzbSrybkhqQufKre6NK7i.png',
-  licenses: [
-    {
-      id: 1,
-      abbrev: 'APRN',
-      name: 'Advanced Practice Registered Nurses',
-      state: 'CT',
-    },
-  ],
-  pro_profile: {
-    id: 1,
-    user_id: 2,
-    hourly_rate: 50,
-    daily_rate: 500,
-    radius: 100,
-    working_hours: {
-      hours: {
-        friday: {
-          open: '8:00',
-          close: '5:00',
-        },
-        monday: {
-          open: '8:00',
-          close: '5:00',
-        },
-        sunday: {
-          open: '0',
-          close: '0',
-        },
-        tuesday: {
-          open: '8:00',
-          close: '5:00',
-        },
-        saturday: {
-          open: '8:00',
-          close: '5:00',
-        },
-        thursday: {
-          open: '8:00',
-          close: '5:00',
-        },
-        wednesday: {
-          open: '8:00',
-          close: '5:00',
-        },
-      },
-    },
-    created_at: '2022-10-20T13:30:59.000000Z',
-    updated_at: '2022-10-20T17:50:41.000000Z',
-  },
-};
-
-const DATA = [
-  {id: '1', label: 'Fazzy'},
-  {id: '2', label: 'Mat'},
-  {id: '3', label: 'Heath App'},
-  {id: '4', label: 'Mobile'},
-];
 const App = ({navigation, route}) => {
   const {proId} = route.params;
   const [selected, setSelected] = useState([]);
   const [index, setIndex] = useState('Hours');
   const [scroll, setScroll] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [item, setItem] = useState(null);
   const [pro, setPro] = useState(null);
@@ -144,6 +79,7 @@ const App = ({navigation, route}) => {
   ]);
 
   useEffect(() => {
+    setLoading(true);
     handleAPIRequest('get', `pros/${proId}`, null)
       .then(response => {
         if (response) {
@@ -155,31 +91,15 @@ const App = ({navigation, route}) => {
           // );
 
           setItem(response.data.user);
+          setLoading(false);
           // AsyncStorage.setItem('User', JSON.stringify(response.user));
         }
       })
       .catch(e => {
         console.log(e);
+        setLoading(false);
       });
   }, []);
-
-  const hoursToArray = data => {
-    const hours = data;
-
-    const hoursArray = Object.keys(hours.hours).map(day => ({
-      day,
-      open: hours.hours[day].open,
-      close: hours.hours[day].close,
-    }));
-
-    if (hoursArray.length) {
-      console.warn(hoursArray, 'fakjfeeyeyeyeyeyeywwtwt');
-
-      return hoursArray;
-    } else {
-      return [];
-    }
-  };
 
   const handlePress = id => {
     setSelected(prevState => {
@@ -215,7 +135,7 @@ const App = ({navigation, route}) => {
 
   return (
     <Layout>
-      {item && (
+      {item ? (
         <ScrollView
           showsVerticalScrollIndicator={false}
           scrollEnabled={scroll}
@@ -380,11 +300,7 @@ const App = ({navigation, route}) => {
               <>
                 {item.pro_profile.working_hours && (
                   <ScrollView>
-                    <Hours
-                      workingHours={hoursToArray(
-                        item.pro_profile.working_hours,
-                      )}
-                    />
+                    <Hours workingHours={item.pro_profile.working_hours} />
                     <View style={{height: 50}} />
                   </ScrollView>
                 )}
@@ -437,6 +353,8 @@ const App = ({navigation, route}) => {
             <View style={{height: 20}} />
           </View>
         </ScrollView>
+      ) : (
+        <AnimatedLoader />
       )}
     </Layout>
   );

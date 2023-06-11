@@ -23,8 +23,9 @@ import Button from '../../components/Button';
 import {handleAPIRequest} from '../../Helper/ApiHandler';
 import axios from 'axios';
 import {useDispatch, useSelector} from 'react-redux';
-import {getAllPros} from '../../Store/Actions/Actions';
+import {getAllPros, setAppLoading} from '../../Store/Actions/Actions';
 import index from '../Login';
+import AnimatedLoader from '../../components/Loader';
 
 const data = {
   uuid: 'b94a089b-6779-47a7-b5e4-9096c78392f3',
@@ -98,20 +99,22 @@ const App = ({navigation}) => {
   const [selected, setSelected] = useState([]);
   const dispatch = useDispatch();
   const profressionals = useSelector(state => state.Reducer.pros);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
     handleAPIRequest('get', 'pros', null)
       .then(response => {
         if (response) {
           // console.warn(response);
           dispatch(getAllPros(response));
+          setLoading(false);
+
           // AsyncStorage.setItem('User', JSON.stringify(response.user));
         }
-
-        console.log(profressionals, 'fafajfeyyfe');
       })
       .catch(e => {
-        console.log(e, 'alkfalfkjalfksj');
+        setLoading(false);
       });
   }, []);
 
@@ -346,6 +349,7 @@ const App = ({navigation}) => {
           </View>
         </View>
       </BottomSheetModal> */}
+      {loading && <AnimatedLoader />}
     </BottomSheetModalProvider>
   );
 };

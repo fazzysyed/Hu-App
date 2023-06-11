@@ -1,8 +1,14 @@
-import {GET_ALL_PROS, LOGOUT, SET_USER} from '../Actions/actionTypes';
+import {
+  APPLOADING,
+  GET_ALL_PROS,
+  LOGOUT,
+  SET_USER,
+} from '../Actions/actionTypes';
 
 const initialState = {
   user: null,
   pros: [],
+  appLoading: false,
 };
 const Reducer = (state = initialState, action) => {
   const {type, payload} = action;
@@ -23,7 +29,11 @@ const Reducer = (state = initialState, action) => {
         ...state,
         pros: payload,
       };
-
+    case APPLOADING:
+      return {
+        ...state,
+        appLoading: payload,
+      };
     default:
       return state;
   }

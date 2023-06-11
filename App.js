@@ -37,8 +37,10 @@ import TermsAndConditionsScreen from './src/Screens/Terms';
 import Reservation from 'react-native-calendars/src/agenda/reservation-list/reservation';
 import Reservations from './src/Screens/Reservations';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {setUser} from './src/Store/Actions/Actions';
+import {setAppLoading, setUser} from './src/Store/Actions/Actions';
 import ReservationDetails from './src/Screens/ReservationDetails';
+import Tabs from './src/components/BottomTab';
+import AnimatedLoader from './src/components/Loader';
 
 const STACK = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -117,19 +119,15 @@ const App = () => {
       <STACK.Navigator>
         <STACK.Screen
           name="Home1"
-          component={Home}
+          component={Tabs}
           options={{headerShown: null}}
         />
-        {/* <STACK.Screen
-          component={Reservations}
-          name="Reservations"
-          options={{headerShown: null}}
-        />
+
         <STACK.Screen
           component={ReservationDetails}
           name="ReservationDetails"
           options={{headerShown: null}}
-        /> */}
+        />
 
         <STACK.Screen
           component={Details}
@@ -161,31 +159,13 @@ const App = () => {
     );
   };
 
-  const AppStack = () => {
-    return (
-      <Drawer.Navigator
-        drawerContent={props => <CustomSidebarMenu {...props} />}
-        initialRouteName="Home">
-        <Drawer.Screen
-          component={AppStackNavigation}
-          name="Home"
-          options={{headerShown: null}}
-        />
-        <Drawer.Screen
-          component={ProfileScreen}
-          name="Profile"
-          options={{headerShown: null}}
-        />
-      </Drawer.Navigator>
-    );
-  };
-
   return (
     <PaperProvider theme={theme}>
       <NavigationContainer>
         {/* <AppStack /> */}
-        {isLoggedIn ? <AppStack /> : <AuthStack />}
+        {isLoggedIn ? <AppStackNavigation /> : <AuthStack />}
       </NavigationContainer>
+
       <FlashMessage position="top" />
     </PaperProvider>
   );

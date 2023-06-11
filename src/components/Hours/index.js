@@ -9,10 +9,10 @@ const WeeklyWorkingHours = ({workingHours}) => {
       <View style={styles.table}>
         {workingHours.map(day => (
           <View key={day} style={styles.row}>
-            <Text style={styles.cell}>{day.day}</Text>
+            <Text style={styles.cell}>{day.name}</Text>
             <Text style={styles.cell}>
               {day.open != 0 && day.close != 0
-                ? `${day.open} -${day.close}`
+                ? `${day.toTime} -${day.fromTime}`
                 : 'closed'}
             </Text>
           </View>

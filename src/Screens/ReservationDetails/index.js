@@ -14,17 +14,47 @@ import moment from 'moment';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {handleAPIRequest} from '../../Helper/ApiHandler';
 import Button from '../../components/Button';
+import ExtraTerms from '../../components/ExtraTerms';
 
 const ReservationDetails = ({navigation, route}) => {
   const {uuid} = route.params;
   const [reservations, setReservartions] = useState(null);
+  const [headerDetails, setHeaderDetails] = useState(null);
+  const [note, setNote] = useState('');
+  const [modal, setModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
+  const handleAccept = () => {
+    if (selectedItem) {
+      handleAPIRequest('post', `accept-offer/${selectedItem.uuid}`, {
+        additional_terms: note,
+      }).then(response => {
+        console.warn(response);
+      });
+    }
+  };
   useEffect(() => {
     handleAPIRequest('get', `reservation/${uuid}`, null)
       .then(response => {
         if (response) {
-          Alert.alert(JSON.stringify(response));
-          setReservartions(response.data);
+          if (response.data.reservation) {
+            setHeaderDetails(response.data.reservation);
+            let newValue = [response.data.reservation];
+
+            let counter = response.data.reservation.counterOffers;
+
+            console.log(counter);
+
+            if (counter.length) {
+              counter.map(item => {
+                newValue.push(item);
+              });
+            }
+
+            console.warn(newValue);
+
+            setReservartions(newValue);
+          }
 
           // AsyncStorage.setItem('User', JSON.stringify(response.user));
         }
@@ -83,7 +113,6 @@ const ReservationDetails = ({navigation, route}) => {
       </View>
     );
   };
-
   const renderItem = ({item}) => (
     <View style={styles.itemContainer}>
       <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
@@ -130,7 +159,7 @@ const ReservationDetails = ({navigation, route}) => {
               height: 10,
               width: 10,
               backgroundColor:
-                item.status === 'opened'
+                item.status === 'open'
                   ? 'green'
                   : item.status === 'closed'
                   ? 'grey'
@@ -172,7 +201,7 @@ const ReservationDetails = ({navigation, route}) => {
         </Text>
       </View>
 
-      {item.counter_offer_counts > 5 ? (
+      {item.status === 'open' && (
         <View
           style={{
             flexDirection: 'row',
@@ -184,7 +213,7 @@ const ReservationDetails = ({navigation, route}) => {
             <TouchableOpacity
               onPress={() => {
                 navigation.navigate('Appointment', {
-                  uuid: item.uuid,
+                  uuid: reservations[0].uuid,
                   counter: true,
                 });
               }}
@@ -201,29 +230,57 @@ const ReservationDetails = ({navigation, route}) => {
               <Text style={styles.buttonTitle}>Update</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={styles.button}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => {
+                setSelectedItem(item);
+                setModal(true);
+              }}>
               <Text style={styles.buttonTitle}>Accept</Text>
             </TouchableOpacity>
           )}
         </View>
-      ) : (
-        <TouchableOpacity
-          style={[styles.button, {alignSelf: 'center', width: 150}]}>
-          <Text style={styles.buttonTitle}>View Details</Text>
-        </TouchableOpacity>
       )}
     </View>
   );
+
   return (
     <Layout>
-      <Text style={styles.reservations}>My Reservations</Text>
+      {headerDetails && (
+        <>
+          {headerDetails.offered_by_me ? (
+            <Text
+              style={
+                styles.reservations
+              }>{`Offer to ${headerDetails.offered_to.firstname} ${headerDetails.offered_to.lastname}`}</Text>
+          ) : (
+            <Text
+              style={
+                styles.reservations
+              }>{`Offer by ${headerDetails.offered_by.firstname} ${headerDetails.offered_by.lastname}`}</Text>
+          )}
+        </>
+      )}
 
-      {/* <FlatList
-        data={reservations}
-        renderItem={renderItem}
-        // keyExtractor={item => item.id.toString()}
-        contentContainerStyle={styles.container}
-      /> */}
+      {reservations && (
+        <FlatList
+          showsVerticalScrollIndicator={false}
+          style={{marginBottom: 100}}
+          data={reservations}
+          renderItem={renderItem}
+          // keyExtractor={item => reservations.id.toString()}
+          contentContainerStyle={styles.container}
+        />
+      )}
+      <ExtraTerms
+        isModalVisible={modal}
+        note={note}
+        setNote={text => setNote(text)}
+        onCancel={() => setModal(false)}
+        onSuccess={() => {
+          handleAccept();
+        }}
+      />
     </Layout>
   );
 };

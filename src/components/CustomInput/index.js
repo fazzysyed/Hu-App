@@ -33,6 +33,7 @@ const CustomInput = ({
           styles.input,
           {
             height: height ? 100 : 50,
+
             textAlignVertical: height ? 'top' : undefined,
           },
         ]}

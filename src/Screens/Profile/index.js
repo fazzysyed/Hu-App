@@ -12,6 +12,13 @@ import {
   Alert,
   Platform,
 } from 'react-native';
+import mime from 'mime';
+import CustomLabel from '../../components/Label';
+
+import MultiSlider from '@ptomasroos/react-native-multi-slider';
+
+import {launchImageLibrary} from 'react-native-image-picker';
+
 import DropDownPicker from 'react-native-dropdown-picker';
 
 import Icon from 'react-native-vector-icons/AntDesign';
@@ -44,6 +51,8 @@ import {
 } from 'react-native-responsive-screen';
 import {getCurrentDate} from '../../Helper/GetCurrentDate';
 import {handleAPIRequest} from '../../Helper/ApiHandler';
+import {validatePassword} from '../../Helper/Vilidator';
+import {useSelector} from 'react-redux';
 const width = Dimensions.get('window').width;
 
 const licenseData = [
@@ -56,20 +65,26 @@ const ProfileScreen = ({navigation}) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [index, setIndex] = useState('profile');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [addLicense, setAddLicense] = useState(false);
   const [item, setItem] = useState({});
   const [switchValue, setSwitchValue] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+  const user = useSelector(state => state.Reducer.user);
 
   const [licenses, setLicenses] = useState(licenseData);
 
   const [days, setDays] = useState(WEEK_DAYS);
-
+  const [preferences, setPreferences] = useState({
+    hourly_rate: '',
+    daily_rate: '',
+    radius: '',
+  });
   //Address State
 
   const [open, setOpen] = useState(false);
@@ -91,9 +106,9 @@ const ProfileScreen = ({navigation}) => {
     state: '',
     city: '',
     zip: '',
-    address1: '',
-    address2: '',
-    type: '',
+    address_1: '',
+    address_2: '',
+    type: 'mailing',
     uuid: '',
   });
 
@@ -109,14 +124,12 @@ const ProfileScreen = ({navigation}) => {
   const [toTime, setToTime] = useState('');
   const [notification, setNotifications] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
+  const [profileImage, setProfileImage] = useState('');
 
   const bottomSheetModalRef = useRef(null);
 
   // variables
-  const snapPoints = useMemo(
-    () => ['25%', index === 'hours' ? '50%' : '90%'],
-    [],
-  );
+  const snapPoints = useMemo(() => ['25%', '95%'], []);
 
   // callbacks
   const handlePresentModalPress = useCallback(() => {
@@ -125,6 +138,16 @@ const ProfileScreen = ({navigation}) => {
   const handleSheetChanges = useCallback(index => {
     console.log('handleSheetChanges', index);
   }, []);
+
+  const AddLicenseHandler = () => {
+    // handleAPIRequest('get', `user`, {
+    //   'license_type' : value,
+    //   'license_state' :$request->license_state,
+    //   'license_id'=>$request->license_id,
+    // }).then((response)=>{
+    //   Alert.alert(response)
+    // })
+  };
 
   // renders
 
@@ -143,7 +166,9 @@ const ProfileScreen = ({navigation}) => {
       <View>
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
           <Text style={styles.heading}>Type:</Text>
-          <Text style={styles.subHeading}>{item.type}</Text>
+          <Text numberOfLines={3} style={styles.subHeading}>
+            {item.type}
+          </Text>
         </View>
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
           <Text style={styles.heading}>Number:</Text>
@@ -172,7 +197,20 @@ const ProfileScreen = ({navigation}) => {
         if (response) {
           // dispatch(getAllPros(response));
           setUserProfile(response.user.profile);
-          console.warn(response.user.profile, 'ProfilePciture');
+
+          setDays(
+            response.user.profile.pro_profile
+              ? response.user.profile.pro_profile.working_hours
+              : days,
+          );
+          setPreferences({
+            radius: response.user.profile.pro_profile.radius.toString(),
+            hourly_rate:
+              response.user.profile.pro_profile.hourly_rate.toString(),
+            daily_rate: response.user.profile.pro_profile.daily_rate.toString(),
+          });
+
+          console.warn(response.user, 'Changetoapp');
 
           // AsyncStorage.setItem('User', JSON.stringify(response.user));
         }
@@ -239,908 +277,1260 @@ const ProfileScreen = ({navigation}) => {
     }
     hideDatePicker();
   };
+
+  const proProfileHandler = () => {
+    handleAPIRequest('post', `pro-profile`, {
+      ...preferences,
+      working_hours: days,
+    }).then(response => {
+      Alert.alert(response);
+    });
+  };
+
+  useEffect(() => {
+    const updatePasswordErrMessage = async () => {
+      if (password.length && !validatePassword(password)) {
+        setPasswordError(
+          'Your password must be more than 8 characters long, should contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character',
+        );
+        return null;
+      }
+      setPasswordError('');
+      return null;
+    };
+    updatePasswordErrMessage();
+  }, [password]);
+
+  useEffect(() => {
+    const updatePasswordErrMessage = async () => {
+      if (password != confirmPassword && confirmPassword.length != 7) {
+        setPasswordError(
+          `The confirmed password does not match the new password`,
+        );
+        return null;
+      }
+      setPasswordError('');
+      return null;
+    };
+    updatePasswordErrMessage();
+  }, [confirmPassword]);
+
+  const updateProfile = () => {
+    handleAPIRequest(
+      'put',
+      `user`,
+      password
+        ? {
+            firtname: firstName,
+            email: email,
+            password: password,
+            lastname: lastName,
+          }
+        : {
+            firtname: firstName,
+            email: email,
+
+            lastname: lastName,
+          },
+    )
+      .then(response => {
+        if (response) {
+          console.warn(response);
+          // setUserProfile(response.data);
+          // dispatch(getAllPros(response));
+          Alert.alert('Done');
+
+          // AsyncStorage.setItem('User', JSON.stringify(response.user));
+        }
+      })
+      .catch(e => {
+        console.log(e);
+      });
+  };
+
+  const handleProfileImage = () => {
+    console.warn(user.token);
+    launchImageLibrary({noData: true, quality: 0.8}, response => {
+      if (response.didCancel) {
+        console.log('Image picker cancelled');
+      } else if (response.error) {
+        console.log('Image picker error:', response.error);
+      } else {
+        const imagenew = {
+          uri: response.assets[0].uri,
+          width: response.assets[0].width,
+          height: response.assets[0].height,
+          fileName: response.assets[0].fileName,
+          type: response.assets[0].type,
+        };
+
+        setProfileImage(response.assets[0].uri);
+
+        const formData = new FormData();
+        formData.append('image', {
+          uri:
+            Platform.OS === 'android'
+              ? response.assets[0].uri
+              : response.assets[0].uri.replace('file://', ''),
+          type: mime.getType(response.assets[0].uri),
+          name: response.assets[0].fileName,
+        });
+
+        var requestOptions = {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data;',
+            Authorization: `Bearer ${user.token}`,
+          },
+        };
+        fetch('https://app.healthcare-up.com/api/v1/user-photo', requestOptions)
+          .then(response => response.text())
+          .then(response => {
+            console.log(response);
+          })
+          .catch(e => {
+            console.log(e, 'Fazzysye');
+          });
+      }
+    });
+  };
+
+  const createAddress = () => {
+    console.warn(address);
+    handleAPIRequest('post', `address`, address)
+      .then(response => {
+        Alert.alert('Done');
+      })
+      .catch(e => console.log(e));
+  };
+
+  const updateAddress = () => {
+    handleAPIRequest('put', `address/${address.uuid}`, address)
+      .then(response => {
+        Alert.alert(JSON.stringify(response));
+      })
+      .catch(e => console.log(e));
+  };
   return (
     <BottomSheetModalProvider>
       <Layout noMargin>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            padding: 15,
-            borderBottomWidth: 0.3,
-            backgroundColor: '#Fcfcfc',
-            borderColor: 'grey',
-            height: 120,
-            justifyContent: 'space-between',
-          }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              // alignItems: 'center',
-              justifyContent: 'space-between',
-            }}>
-            <Image
-              source={require('../../assets/images/placeholderimage.jpeg')}
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: 50,
-                borderWidth: 2,
-                borderColor: '#1C75BC',
-              }}
-            />
+        {userProfile && (
+          <>
             <View
               style={{
-                justifyContent: 'center',
-                width: 200,
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: 15,
+                borderBottomWidth: 0.3,
+                backgroundColor: '#Fcfcfc',
+                borderColor: 'grey',
+                height: 120,
+                justifyContent: 'space-between',
               }}>
-              <Text style={styles.userName}>Faraz Syed</Text>
-              <Text
+              <View
                 style={{
-                  fontFamily: 'Poppins-Regular',
-                  color: 'grey',
-                  marginHorizontal: 10,
+                  flexDirection: 'row',
+                  // alignItems: 'center',
+                  justifyContent: 'space-between',
                 }}>
-                Fazzy@yopmail.com
-              </Text>
-            </View>
-          </View>
-          <Right
-            onPress={() => {
-              setIndex('profile');
-              handlePresentModalPress();
-            }}
-            name="chevron-right"
-            size={30}
-            color="grey"
-          />
-        </View>
-
-        <View style={{height: 20}} />
-
-        <TouchableOpacity style={styles.row}>
-          <View style={styles.innerRow}>
-            <View style={styles.iconContainer}>
-              <Right name="address" color={'#FFFFFF'} size={20} />
-            </View>
-            <Text style={styles.settingTitle}>Address</Text>
-          </View>
-          <Right
-            onPress={() => {
-              setIndex('address');
-              handlePresentModalPress();
-              // navigation.navigate('address', {
-              //   addresses: userProfile.addresses,
-              // });
-            }}
-            name="chevron-right"
-            size={30}
-            color="grey"
-            style={{marginHorizontal: 15}}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.row}>
-          <View style={styles.innerRow}>
-            <View style={styles.iconContainer}>
-              <Business name="business-center" color={'#FFFFFF'} size={20} />
-            </View>
-            <Text style={styles.settingTitle}>Busniess Profile</Text>
-          </View>
-          <Right
-            onPress={() => {
-              setIndex('business');
-              handlePresentModalPress();
-            }}
-            name="chevron-right"
-            size={30}
-            color="grey"
-            style={{marginHorizontal: 15}}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.row}>
-          <View style={styles.innerRow}>
-            <View style={styles.iconContainer}>
-              <Hours name="hours-24" color={'#FFFFFF'} size={20} />
-            </View>
-            <Text style={styles.settingTitle}>Working Hours</Text>
-          </View>
-          <Right
-            onPress={() => {
-              setIndex('hours');
-              handlePresentModalPress();
-            }}
-            name="chevron-right"
-            size={30}
-            color="grey"
-            style={{marginHorizontal: 15}}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.row}>
-          <View style={styles.innerRow}>
-            <View style={styles.iconContainer}>
-              <License name="drivers-license" color={'#FFFFFF'} size={20} />
-            </View>
-            <Text style={styles.settingTitle}>My Linceses</Text>
-          </View>
-          <Right
-            onPress={() => {
-              setIndex('licenses');
-              handlePresentModalPress();
-            }}
-            name="chevron-right"
-            size={30}
-            color="grey"
-            style={{marginHorizontal: 15}}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.row}>
-          <View style={styles.innerRow}>
-            <View style={styles.iconContainer}>
-              <Edit name="notification" color={'#FFFFFF'} size={20} />
-            </View>
-            <Text style={styles.settingTitle}>Notifications</Text>
-          </View>
-          <SwitchWithIcons
-            // icon = {
-            //   {  true: on,
-            //     false: "",}
-            //   }
-            trackColor={{false: '#EBEBEB', true: '#C8CFF6'}}
-            thumbColor={{false: '#FFFFFF', true: '#1C75BC'}}
-            //  thumbColor="white"
-            value={notification}
-            onValueChange={() => setNotifications(!notification)}
-            style={{marginHorizontal: 20}}
-          />
-        </TouchableOpacity>
-
-        <BottomSheetModal
-          enableContentPanningGesture={false}
-          ref={bottomSheetModalRef}
-          index={1}
-          snapPoints={snapPoints}
-          onChange={handleSheetChanges}>
-          {index === 'profile' && (
-            <ScrollView style={styles.container}>
-              <View style={{flexDirection: 'row', justifyContent: 'center'}}>
-                <View style={styles.imageContainer}>
-                  <TouchableOpacity style={styles.editIconContainer}>
-                    <Edit name="edit" size={17} style={styles.editIcon} />
-                  </TouchableOpacity>
-                  <Image
-                    source={require('../../assets/images/pro.png')}
-                    style={[styles.profilePicture]}
-                  />
-                </View>
-              </View>
-
-              <CustomInput
-                label={'First Name'}
-                value={firstName}
-                onChangeText={text => setFirstName(text)}
-              />
-
-              <CustomInput
-                label={'Last Name'}
-                value={lastName}
-                onChangeText={text => setLastName(text)}
-              />
-              <CustomInput
-                label={'Email'}
-                value={email}
-                onChangeText={text => setEmail(text)}
-              />
-              <CustomInput
-                label={'Phone'}
-                value={phone}
-                onChangeText={text => setPhone(text)}
-              />
-
-              <CustomInput
-                label={'Password'}
-                value={password}
-                onChangeText={text => setPassword(text)}
-              />
-              <CustomInput
-                label={'Confrim Password'}
-                value={confirmPassword}
-                onChangeText={text => setConfirmPassword(text)}
-              />
-
-              <Button title={'Update'} />
-              <View style={{height: 120}} />
-            </ScrollView>
-          )}
-
-          {index === 'business' && (
-            <ScrollView style={styles.container}>
-              <View style={{flexDirection: 'row', justifyContent: 'center'}}>
-                <View style={styles.imageContainer}>
-                  <TouchableOpacity style={styles.editIconContainer}>
-                    <Edit name="edit" size={17} style={styles.editIcon} />
-                  </TouchableOpacity>
-                  <Image
-                    source={require('../../assets/images/pro.png')}
-                    style={[styles.profilePicture]}
-                  />
-                </View>
-              </View>
-
-              <CustomInput
-                label={'Business Name'}
-                value={business.name}
-                onChangeText={text => setBusiness({...business, name: text})}
-              />
-
-              <CustomInput
-                label={'Company Url'}
-                value={business.url}
-                onChangeText={text => setBusiness({...business, url: text})}
-              />
-
-              <CustomInput
-                label={'Public Phone'}
-                value={business.public_phone}
-                onChangeText={text =>
-                  setBusiness({...business, public_phone: text})
-                }
-              />
-              <CustomInput
-                label={'About Business'}
-                value={business.about}
-                onChangeText={text => setBusiness({...business, about: text})}
-              />
-
-              <Button title={'Update'} />
-              <View style={{height: 120}} />
-            </ScrollView>
-          )}
-
-          {index === 'address' && (
-            <View style={{flex: 1}}>
-              <Text
-                style={[styles.userName, {marginVertical: 20, fontSize: 23}]}>
-                Addresses
-              </Text>
-              <BottomSheetFlatList
-                data={userProfile.addresses}
-                ListFooterComponent={() => <View style={{height: 50}} />}
-                style={{height: 400}}
-                renderItem={({item}) => (
-                  <View
+                <Image
+                  source={require('../../assets/images/placeholderimage.jpeg')}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 50,
+                    borderWidth: 2,
+                    borderColor: '#1C75BC',
+                  }}
+                />
+                <View
+                  style={{
+                    justifyContent: 'center',
+                    width: 200,
+                  }}>
+                  <Text
+                    style={
+                      styles.userName
+                    }>{`${userProfile.firstname} ${userProfile.lastname}`}</Text>
+                  <Text
                     style={{
-                      borderWidth: 0.5,
-                      padding: 6,
-                      marginHorizontal: 15,
-                      borderColor: '#ccc',
-                      borderRadius: 6,
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      marginVertical: 10,
+                      fontFamily: 'Poppins-Regular',
+                      color: 'grey',
+                      marginHorizontal: 10,
                     }}>
-                    <View>
-                      <View
-                        style={{flexDirection: 'row', alignItems: 'center'}}>
-                        <Text style={styles.heading}>Address 1:</Text>
-                        <Text style={styles.subHeading}>{item.address_1}</Text>
-                      </View>
-                      <View
-                        style={{flexDirection: 'row', alignItems: 'center'}}>
-                        <Text style={styles.heading}>Address 2:</Text>
-                        <Text style={styles.subHeading}>{item.address_2}</Text>
-                      </View>
-                      <View
-                        style={{flexDirection: 'row', alignItems: 'center'}}>
-                        <>
-                          <Text style={styles.heading}>City:</Text>
-                          <Text style={styles.subHeading}>{item.city}</Text>
-                        </>
-                        <>
-                          <Text style={[styles.heading, {width: undefined}]}>
-                            State:
-                          </Text>
-                          <Text style={styles.subHeading}>{item.state}</Text>
-                        </>
-                      </View>
-                      <View
-                        style={{flexDirection: 'row', alignItems: 'center'}}>
-                        <Text style={styles.heading}>Zip:</Text>
-                        <Text style={styles.subHeading}>{item.zip}</Text>
-                      </View>
-                    </View>
-                    <View
-                      style={{
-                        alignSelf: 'flex-start',
-                        flexDirection: 'row',
-                        marginBottom: 5,
-                      }}>
-                      <Icon
-                        name="edit"
-                        size={22}
-                        color="#1C75BC"
-                        onPress={() => {
-                          setIndex('updateAddress');
-                          // console.warn(item);
+                    {userProfile.email}
+                  </Text>
+                </View>
+              </View>
+              <Right
+                onPress={() => {
+                  setIndex('profile');
 
-                          setAddress({
-                            city: item.city,
-                            address1: item.address_1,
-                            address2: item.address2,
-                            state: item.state,
-                            zip: item.zip,
-                            uuid: item.uuid,
-                            type: item.type,
-                            country: item.country,
-                          });
-                        }}
-                        // style={{marginRight: 16}}
+                  setFirstName(userProfile.firstname);
+                  setLastName(userProfile.lastname);
+                  setEmail(userProfile.email);
+                  handlePresentModalPress();
+                }}
+                name="chevron-right"
+                size={30}
+                color="grey"
+              />
+            </View>
+
+            <View style={{height: 20}} />
+
+            <TouchableOpacity style={styles.row}>
+              <View style={styles.innerRow}>
+                <View style={styles.iconContainer}>
+                  <Right name="address" color={'#FFFFFF'} size={20} />
+                </View>
+                <Text style={styles.settingTitle}>Address</Text>
+              </View>
+              <Right
+                onPress={() => {
+                  setIndex('address');
+                  handlePresentModalPress();
+                  // navigation.navigate('address', {
+                  //   addresses: userProfile.addresses,
+                  // });
+                }}
+                name="chevron-right"
+                size={30}
+                color="grey"
+                style={{marginHorizontal: 15}}
+              />
+            </TouchableOpacity>
+
+            {userProfile.type === 'bus' && (
+              <TouchableOpacity style={styles.row}>
+                <View style={styles.innerRow}>
+                  <View style={styles.iconContainer}>
+                    <Business
+                      name="business-center"
+                      color={'#FFFFFF'}
+                      size={20}
+                    />
+                  </View>
+                  <Text style={styles.settingTitle}>Business Profile</Text>
+                </View>
+                <Right
+                  onPress={() => {
+                    setIndex('business');
+                    handlePresentModalPress();
+                  }}
+                  name="chevron-right"
+                  size={30}
+                  color="grey"
+                  style={{marginHorizontal: 15}}
+                />
+              </TouchableOpacity>
+            )}
+
+            {userProfile.type === 'pro' && (
+              <TouchableOpacity style={styles.row}>
+                <View style={styles.innerRow}>
+                  <View style={styles.iconContainer}>
+                    <Hours name="hours-24" color={'#FFFFFF'} size={20} />
+                  </View>
+                  <Text style={styles.settingTitle}>Job Preferences</Text>
+                </View>
+                <Right
+                  onPress={() => {
+                    setIndex('hours');
+                    handlePresentModalPress();
+                  }}
+                  name="chevron-right"
+                  size={30}
+                  color="grey"
+                  style={{marginHorizontal: 15}}
+                />
+              </TouchableOpacity>
+            )}
+
+            {userProfile.type === 'pro' && (
+              <TouchableOpacity style={styles.row}>
+                <View style={styles.innerRow}>
+                  <View style={styles.iconContainer}>
+                    <License
+                      name="drivers-license"
+                      color={'#FFFFFF'}
+                      size={20}
+                    />
+                  </View>
+                  <Text style={styles.settingTitle}>My Linceses</Text>
+                </View>
+                <Right
+                  onPress={() => {
+                    setIndex('licenses');
+                    handlePresentModalPress();
+                  }}
+                  name="chevron-right"
+                  size={30}
+                  color="grey"
+                  style={{marginHorizontal: 15}}
+                />
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity style={styles.row}>
+              <View style={styles.innerRow}>
+                <View style={styles.iconContainer}>
+                  <Edit name="notification" color={'#FFFFFF'} size={20} />
+                </View>
+                <Text style={styles.settingTitle}>Notifications</Text>
+              </View>
+              <SwitchWithIcons
+                // icon = {
+                //   {  true: on,
+                //     false: "",}
+                //   }
+                trackColor={{false: '#EBEBEB', true: '#C8CFF6'}}
+                thumbColor={{false: '#FFFFFF', true: '#1C75BC'}}
+                //  thumbColor="white"
+                value={notification}
+                onValueChange={() => setNotifications(!notification)}
+                style={{marginHorizontal: 20}}
+              />
+            </TouchableOpacity>
+
+            <BottomSheetModal
+              enableContentPanningGesture={false}
+              ref={bottomSheetModalRef}
+              index={1}
+              snapPoints={snapPoints}
+              onChange={handleSheetChanges}>
+              {index === 'profile' && (
+                <ScrollView style={styles.container}>
+                  <View
+                    style={{flexDirection: 'row', justifyContent: 'center'}}>
+                    <View style={styles.imageContainer}>
+                      <TouchableOpacity
+                        onPress={handleProfileImage}
+                        style={styles.editIconContainer}>
+                        <Edit name="edit" size={17} style={styles.editIcon} />
+                      </TouchableOpacity>
+                      <Image
+                        source={
+                          profileImage
+                            ? {uri: profileImage}
+                            : require('../../assets/images/pro.png')
+                        }
+                        style={[styles.profilePicture]}
                       />
                     </View>
                   </View>
-                )}
-              />
-              <View style={{bottom: 40}}>
-                <Button
-                  title={'Add New'}
-                  onPress={() => {
-                    setAddLicense(true);
-                  }}
-                />
-              </View>
-            </View>
-          )}
 
-          {index === 'updateAddress' && (
-            <View style={styles.container}>
-              <View
-                style={{flexDirection: 'row', justifyContent: 'center'}}></View>
+                  <CustomInput
+                    label={'First Name'}
+                    value={firstName}
+                    onChangeText={text => setFirstName(text)}
+                  />
 
-              <CustomInput
-                label={'Country'}
-                value={address.country}
-                onChangeText={text => setAddress({...address, country: text})}
-              />
+                  <CustomInput
+                    label={'Last Name'}
+                    value={lastName}
+                    onChangeText={text => setLastName(text)}
+                  />
+                  <CustomInput
+                    label={'Email'}
+                    value={email}
+                    onChangeText={text => setEmail(text)}
+                  />
+                  {/* <CustomInput
+                    label={'Phone'}
+                    value={phone}
+                    onChangeText={text => setPhone(text)}
+                  /> */}
 
-              <CustomInput
-                label={'State'}
-                value={address.state}
-                onChangeText={text => setAddress({...address, state: text})}
-              />
-              <CustomInput
-                label={'City'}
-                value={address.city}
-                onChangeText={text => setAddress({...address, city: text})}
-              />
-              <CustomInput
-                label={'Address 2'}
-                height
-                value={address.address1}
-                onChangeText={text => setAddress({...address, address1: text})}
-              />
-              <CustomInput
-                label={'Address 1'}
-                height
-                value={address.address2}
-                onChangeText={text => setAddress({...address, address2: text})}
-              />
+                  <CustomInput
+                    secureTextEntry
+                    label={'Password'}
+                    value={password}
+                    onChangeText={text => setPassword(text)}
+                  />
+                  <CustomInput
+                    secureTextEntry
+                    errorMessage={passwordError}
+                    label={'Confrim Password'}
+                    value={confirmPassword}
+                    onChangeText={text => setConfirmPassword(text)}
+                  />
 
-              <Button title={'Update'} />
-              <View style={{height: 120}} />
-            </View>
-          )}
+                  <Button title={'Update'} onPress={updateProfile} />
+                  <View style={{height: 120}} />
+                </ScrollView>
+              )}
 
-          {index === 'hours' && (
-            <View>
-              <Text
-                style={[styles.userName, {marginVertical: 20, fontSize: 23}]}>
-                Visitng Hours
-              </Text>
-              <FlatList
-                keyExtractor={(item, index) => index.toString()}
-                numColumns={4}
-                data={days}
-                style={styles.flatListStyle}
-                renderItem={({item, index}) => {
-                  return (
-                    <TouchableOpacity
-                      onPress={() => itemHandler(item)}
+              <>
+                {index === 'business' && (
+                  <ScrollView style={styles.container}>
+                    <View
                       style={{
+                        flexDirection: 'row',
                         justifyContent: 'center',
-                        alignItems: 'center',
-                        borderWidth: 2,
-                        borderColor: '#E4E4E4',
-                        padding: 5,
-                        backgroundColor: item.toTime ? '#1C75BC' : '#FFFFFF',
-                        width: width / 4.5,
-                        borderRadius: 7,
-                        height: 60,
-                        marginHorizontal: 2,
-                        marginVertical: 5,
-                        marginTop: 10,
                       }}>
-                      {item.toTime ? (
+                      <View style={styles.imageContainer}>
+                        <TouchableOpacity style={styles.editIconContainer}>
+                          <Edit name="edit" size={17} style={styles.editIcon} />
+                        </TouchableOpacity>
+                        <Image
+                          source={require('../../assets/images/pro.png')}
+                          style={[styles.profilePicture]}
+                        />
+                      </View>
+                    </View>
+
+                    <CustomInput
+                      label={'Business Name'}
+                      value={business.name}
+                      onChangeText={text =>
+                        setBusiness({...business, name: text})
+                      }
+                    />
+
+                    <CustomInput
+                      label={'Company Url'}
+                      value={business.url}
+                      onChangeText={text =>
+                        setBusiness({...business, url: text})
+                      }
+                    />
+
+                    <CustomInput
+                      label={'Public Phone'}
+                      value={business.public_phone}
+                      onChangeText={text =>
+                        setBusiness({...business, public_phone: text})
+                      }
+                    />
+                    <CustomInput
+                      label={'About Business'}
+                      value={business.about}
+                      onChangeText={text =>
+                        setBusiness({...business, about: text})
+                      }
+                    />
+
+                    <Button title={'Update'} />
+                    <View style={{height: 120}} />
+                  </ScrollView>
+                )}
+              </>
+
+              {index === 'address' && (
+                <View style={{flex: 1}}>
+                  <Text
+                    style={[
+                      styles.userName,
+                      {marginVertical: 20, fontSize: 23},
+                    ]}>
+                    Addresses
+                  </Text>
+                  <BottomSheetFlatList
+                    data={userProfile.addresses}
+                    ListFooterComponent={() => <View style={{height: 50}} />}
+                    style={{height: 400}}
+                    renderItem={({item}) => (
+                      <View
+                        style={{
+                          borderWidth: 0.5,
+                          padding: 6,
+                          marginHorizontal: 15,
+                          borderColor: '#ccc',
+                          borderRadius: 6,
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                          marginVertical: 10,
+                        }}>
+                        <View style={{width: '90%'}}>
+                          <View style={{}}>
+                            <Text style={styles.heading}>Address 1:</Text>
+                            <Text style={[styles.subHeading]}>
+                              {item.address_1}
+                            </Text>
+                          </View>
+                          {item.address_2 ? (
+                            <View
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                              }}>
+                              <Text style={styles.heading}>Address 2:</Text>
+                              <Text style={styles.subHeading}>
+                                {item.address_2}
+                              </Text>
+                            </View>
+                          ) : null}
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                            }}>
+                            <Text style={[styles.heading, {width: undefined}]}>
+                              City:
+                            </Text>
+                            <Text style={styles.subHeading}>{item.city}</Text>
+                          </View>
+
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                            }}>
+                            <Text style={[styles.heading, {width: undefined}]}>
+                              State:
+                            </Text>
+                            <Text style={styles.subHeading}>{item.state}</Text>
+                          </View>
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                            }}>
+                            <Text style={styles.heading}>Zip:</Text>
+                            <Text style={styles.subHeading}>{item.zip}</Text>
+                          </View>
+                        </View>
                         <View
                           style={{
-                            borderRadius: 50,
-                            overflow: 'hidden',
-                            alignSelf: 'flex-end',
-                            bottom: 4,
-                            left: 5,
+                            alignSelf: 'flex-start',
+                            flexDirection: 'row',
+                            marginBottom: 5,
                           }}>
-                          <Enc
+                          <Icon
+                            name="edit"
+                            size={22}
+                            color="#1C75BC"
                             onPress={() => {
-                              let newArray = [...days];
-                              let change = newArray[index];
-                              (change.toTime = ''), (change.fromTime = '');
-                              setDays(newArray);
-                              // setList1(List1);
+                              setIndex('updateAddress');
+                              // console.warn(item);
+
+                              setAddress({
+                                city: item.city,
+                                address_1: item.address_1,
+                                address_2: item.address_2,
+                                state: item.state,
+                                zip: item.zip,
+                                uuid: item.uuid,
+                                type: item.type,
+                                country: item.country,
+                              });
                             }}
-                            name="circle-with-cross"
-                            size={20}
-                            color={'#707070'}
-                            style={{
-                              // opacity: 1,
-                              // position: 'absolute',
-                              // right: 0,
-                              // left: 5,
-                              bottom: 0,
-                              backgroundColor: '#FFFFFF',
-                              // borderRadius: 50,
-                              // bottom: -1,
-                            }}
+                            // style={{marginRight: 16}}
                           />
                         </View>
-                      ) : null}
-                      <Text
-                        allowFontScaling={false}
-                        style={{
-                          color: item.toTime ? '#FFFFFF' : '#000',
-                          fontFamily: 'Poppins-Regular',
-                        }}>
-                        {item.day}
-                      </Text>
-                      <Text
-                        allowFontScaling={false}
-                        style={{
-                          fontSize: 7,
-                          color: item.toTime ? '#FFFFFF' : '#000',
-                          fontFamily: 'Poppins-SemiBold',
-                          marginVertical: 5,
-                          marginBottom: 5,
-                        }}>
-                        {item.toTime}-{item.fromTime}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                }}
-              />
-              <View style={{height: 20}} />
-              <Button title={'Update'} />
-            </View>
-          )}
-
-          {index === 'licenses' && (
-            <View style={{flex: 1}}>
-              <Text
-                style={[styles.userName, {marginVertical: 20, fontSize: 23}]}>
-                My Licenses
-              </Text>
-              <BottomSheetFlatList
-                data={licenses}
-                renderItem={renderItem}
-                keyExtractor={item => item.id}
-                contentContainerStyle={{height: 200}}
-              />
-              <View style={{bottom: 40}}>
-                <Button
-                  title={'Add New'}
-                  onPress={() => {
-                    setAddLicense(true);
-                  }}
-                />
-              </View>
-            </View>
-          )}
-        </BottomSheetModal>
-
-        <Modal isVisible={isModalVisible}>
-          <View
-            style={{
-              backgroundColor: '#1C75BC',
-              width: '100%',
-              borderWidth: 0,
-              borderTopRightRadius: hp(2),
-              borderTopLeftRadius: hp(2),
-              borderColor: ' #1C75BC',
-            }}>
-            <Text
-              allowFontScaling={false}
-              style={{
-                fontSize: hp(2.5),
-                color: '#fff',
-                textAlign: 'center',
-                paddingVertical: hp(2),
-                fontFamily: 'Poppins-SemiBold',
-              }}>
-              {'Working Hours For'} {item.name}
-            </Text>
-          </View>
-          <View style={styles.viewModal}>
-            <View
-              style={{
-                paddingBottom: hp(2),
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-              }}>
-              <View />
-              <View style={{flexDirection: 'row', marginVertical: 10}}>
-                <Text
-                  allowFontScaling={false}
-                  style={{
-                    fontSize: hp(2),
-                    color: '#000',
-                    fontFamily: 'Poppins-Regular',
-                    marginHorizontal: 10,
-                  }}>
-                  {'Do this for all days'}
-                </Text>
-                <SwitchWithIcons
-                  // icon = {
-                  //   {  true: on,
-                  //     false: "",}
-                  //   }
-                  trackColor={{false: '#EBEBEB', true: '#C8CFF6'}}
-                  thumbColor={{false: '#FFFFFF', true: '#1C75BC'}}
-                  //  thumbColor="white"
-                  value={switchValue}
-                  onValueChange={() => setSwitchValue(!switchValue)}
-                />
-              </View>
-            </View>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}>
-              <View style={{flexDirection: 'row'}}>
-                <TouchableOpacity
-                  onPress={() => showDatePicker('to')}
-                  style={{alignSelf: 'center', flexDirection: 'row'}}>
-                  <View
-                    style={{
-                      width: 40,
-                      borderWidth: 1,
-                      borderColor: '#ccc',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      borderRadius: 10,
-                      height: 40,
-                      marginHorizontal: 5,
-                    }}>
-                    <Text
-                      allowFontScaling={false}
-                      style={{
-                        fontSize: hp(2.5),
-                        color: '#000',
-
-                        textAlign: 'center',
-                      }}>
-                      {toTime ? toTime.split(':')[0].trim() : '00'}
-                    </Text>
+                      </View>
+                    )}
+                  />
+                  <View style={{bottom: 40}}>
+                    <Button
+                      title={'Add New'}
+                      onPress={() => {
+                        setIndex('createAddress');
+                      }}
+                    />
                   </View>
-                  <View
-                    style={{
-                      width: 40,
-                      borderWidth: 1,
-                      borderColor: '#ccc',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: 40,
-                      borderRadius: 10,
-                      marginHorizontal: 5,
-                    }}>
-                    <Text
-                      allowFontScaling={false}
-                      style={{
-                        fontSize: hp(2.5),
-                        color: '#000',
+                </View>
+              )}
 
-                        textAlign: 'center',
-                      }}>
-                      {toTime
-                        ? toTime
-                            .split(':')[1]
-                            .trim()
-                            .split(
-                              toTime.split(':')[1].trim().includes('PM')
-                                ? 'PM'
-                                : 'AM',
-                            )
-                        : '00'}
-                    </Text>
+              {index === 'updateAddress' && (
+                <ScrollView style={styles.container}>
+                  {/* <CustomInput
+                    label={'Country'}
+                    value={address.country}
+                    onChangeText={text =>
+                      setAddress({...address, country: text})
+                    }
+                  /> */}
+
+                  <CustomInput
+                    label={'State'}
+                    value={address.state}
+                    onChangeText={text => setAddress({...address, state: text})}
+                  />
+                  <CustomInput
+                    label={'City'}
+                    value={address.city}
+                    onChangeText={text => setAddress({...address, city: text})}
+                  />
+
+                  <CustomInput
+                    keyboardType="number-pad"
+                    label={'Zip'}
+                    value={address.zip}
+                    onChangeText={text => setAddress({...address, zip: text})}
+                  />
+                  <CustomInput
+                    label={'Address 1'}
+                    height
+                    value={address.address_1}
+                    onChangeText={text =>
+                      setAddress({...address, address_1: text})
+                    }
+                  />
+                  <CustomInput
+                    label={'Address 2'}
+                    height
+                    value={address.address_2}
+                    onChangeText={text =>
+                      setAddress({...address, address_2: text})
+                    }
+                  />
+
+                  <Button title={'Update'} onPress={updateAddress} />
+                  <View style={{height: 120}} />
+                </ScrollView>
+              )}
+              {index === 'createAddress' && (
+                <ScrollView style={styles.container}>
+                  {/* <CustomInput
+                    label={'Country'}
+                    value={address.country}
+                    onChangeText={text =>
+                      setAddress({...address, country: text})
+                    }
+                  /> */}
+
+                  <CustomInput
+                    label={'State'}
+                    value={address.state}
+                    onChangeText={text => setAddress({...address, state: text})}
+                  />
+                  <CustomInput
+                    label={'City'}
+                    value={address.city}
+                    onChangeText={text => setAddress({...address, city: text})}
+                  />
+
+                  <CustomInput
+                    keyboardType="number-pad"
+                    label={'Zip'}
+                    value={address.zip}
+                    onChangeText={text => setAddress({...address, zip: text})}
+                  />
+
+                  <CustomInput
+                    label={'Address 1'}
+                    height
+                    value={address.address_1}
+                    onChangeText={text =>
+                      setAddress({...address, address_1: text})
+                    }
+                  />
+                  <CustomInput
+                    label={'Address 2'}
+                    height
+                    value={address.address_2}
+                    onChangeText={text =>
+                      setAddress({...address, address_2: text})
+                    }
+                  />
+
+                  <Button title={'Create'} onPress={createAddress} />
+                  <View style={{height: 120}} />
+                </ScrollView>
+              )}
+
+              {index === 'hours' && (
+                <ScrollView>
+                  <Text
+                    style={[
+                      styles.userName,
+                      {marginVertical: 20, fontSize: 23},
+                    ]}>
+                    Job preferences
+                  </Text>
+
+                  <View style={{marginTop: 10}}>
+                    <CustomInput
+                      keyboardType={'number-pad'}
+                      label={'Hourly Rate'}
+                      value={preferences.hourly_rate}
+                      onChangeText={text =>
+                        setPreferences({...preferences, hourly_rate: text})
+                      }
+                    />
+                    <CustomInput
+                      keyboardType={'number-pad'}
+                      label={'Daily Rate'}
+                      value={preferences.daily_rate}
+                      onChangeText={text =>
+                        setPreferences({...preferences, daily_rate: text})
+                      }
+                    />
+                    <CustomInput
+                      keyboardType={'number-pad'}
+                      label={'Radius'}
+                      value={preferences.radius}
+                      onChangeText={text =>
+                        setPreferences({...preferences, radius: text})
+                      }
+                    />
                   </View>
-                </TouchableOpacity>
-              </View>
-              <View>
+
+                  {/* <View
+                    style={{
+                      marginTop: 10,
+                      alignSelf: 'center',
+                    }}>
+                    <MultiSlider
+                      sliderLength={330}
+                      selectedStyle={{
+                        backgroundColor: '#1C75BC',
+                      }}
+                      unselectedStyle={{
+                        backgroundColor: '#ccc',
+                      }}
+                      containerStyle={{
+                        height: 40,
+                      }}
+                      trackStyle={{
+                        height: 3,
+                        backgroundColor: '#1C75BC',
+                      }}
+                      touchDimensions={{
+                        height: 40,
+                        width: 40,
+                        borderRadius: 20,
+                        slipDisplacement: 40,
+                      }}
+                      values={100}
+                      enableLabel
+                      customLabel={CustomLabel}
+                      customMarker={e => {
+                        return (
+                          <View
+                            style={styles.nobeContainer}
+                            currentValue={e.currentValue}></View>
+                        );
+                      }}
+                    />
+                  </View> */}
+                  <Text
+                    style={{
+                      marginBottom: 2,
+                      fontSize: 16,
+                      fontFamily: 'Poppins-Regular',
+                      color: '#000',
+                      marginHorizontal: 10,
+                    }}>
+                    Visiting Hours
+                  </Text>
+
+                  <FlatList
+                    keyExtractor={(item, index) => index.toString()}
+                    numColumns={4}
+                    data={days}
+                    style={styles.flatListStyle}
+                    renderItem={({item, index}) => {
+                      return (
+                        <TouchableOpacity
+                          onPress={() => itemHandler(item)}
+                          style={{
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            borderWidth: 2,
+                            borderColor: '#E4E4E4',
+                            padding: 5,
+                            backgroundColor: item.toTime
+                              ? '#1C75BC'
+                              : '#FFFFFF',
+                            width: width / 4.5,
+                            borderRadius: 7,
+                            height: 60,
+                            marginHorizontal: 2,
+                            marginVertical: 5,
+                            marginTop: 10,
+                          }}>
+                          {item.toTime ? (
+                            <View
+                              style={{
+                                borderRadius: 50,
+                                overflow: 'hidden',
+                                alignSelf: 'flex-end',
+                                bottom: 4,
+                                left: 5,
+                              }}>
+                              <Enc
+                                onPress={() => {
+                                  let newArray = [...days];
+                                  let change = newArray[index];
+                                  (change.toTime = ''), (change.fromTime = '');
+                                  setDays(newArray);
+                                  // setList1(List1);
+                                }}
+                                name="circle-with-cross"
+                                size={20}
+                                color={'#707070'}
+                                style={{
+                                  // opacity: 1,
+                                  // position: 'absolute',
+                                  // right: 0,
+                                  // left: 5,
+                                  bottom: 0,
+                                  backgroundColor: '#FFFFFF',
+                                  // borderRadius: 50,
+                                  // bottom: -1,
+                                }}
+                              />
+                            </View>
+                          ) : null}
+                          <Text
+                            allowFontScaling={false}
+                            style={{
+                              color: item.toTime ? '#FFFFFF' : '#000',
+                              fontFamily: 'Poppins-Regular',
+                            }}>
+                            {item.day}
+                          </Text>
+                          <Text
+                            allowFontScaling={false}
+                            style={{
+                              fontSize: 7,
+                              color: item.toTime ? '#FFFFFF' : '#000',
+                              fontFamily: 'Poppins-SemiBold',
+                              marginVertical: 5,
+                              marginBottom: 5,
+                            }}>
+                            {item.toTime}-{item.fromTime}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    }}
+                  />
+                  <View style={{height: 20}} />
+                  <Button title={'Update'} onPress={proProfileHandler} />
+                </ScrollView>
+              )}
+
+              {index === 'licenses' && (
+                <View style={{flex: 1}}>
+                  <Text
+                    style={[
+                      styles.userName,
+                      {marginVertical: 20, fontSize: 23},
+                    ]}>
+                    My Licenses
+                  </Text>
+                  <BottomSheetFlatList
+                    data={licenses}
+                    renderItem={renderItem}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={{height: 200}}
+                  />
+                  <View style={{bottom: 40}}>
+                    <Button
+                      title={'Add New'}
+                      onPress={() => {
+                        setAddLicense(true);
+                      }}
+                    />
+                  </View>
+                </View>
+              )}
+            </BottomSheetModal>
+
+            <Modal isVisible={isModalVisible}>
+              <View
+                style={{
+                  backgroundColor: '#1C75BC',
+                  width: '100%',
+                  borderWidth: 0,
+                  borderTopRightRadius: hp(2),
+                  borderTopLeftRadius: hp(2),
+                  borderColor: ' #1C75BC',
+                }}>
                 <Text
                   allowFontScaling={false}
                   style={{
                     fontSize: hp(2.5),
-                    color: '#000',
-                    fontFamily: 'Poppins-SemiBold',
-                  }}>
-                  to
-                </Text>
-              </View>
-              <View style={{flexDirection: 'row'}}>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (toTime.length) {
-                      showDatePicker('from');
-                    } else {
-                      showMessage({
-                        message: 'Alert',
-                        description: 'Please select the start time first.',
-                        type: 'danger',
-                      });
-                    }
-                  }}
-                  style={{alignSelf: 'center', flexDirection: 'row'}}>
-                  <View
-                    style={{
-                      width: 40,
-                      borderWidth: 1,
-                      borderColor: '#ccc',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      borderRadius: 10,
-                      height: 40,
-                      marginHorizontal: 5,
-                    }}>
-                    <Text
-                      allowFontScaling={false}
-                      style={{
-                        fontSize: hp(2.5),
-                        color: '#000',
-
-                        textAlign: 'center',
-                      }}>
-                      {fromTime ? fromTime.split(':')[0].trim() : '00'}
-                    </Text>
-                  </View>
-                  <View
-                    style={{
-                      width: 40,
-                      borderWidth: 1,
-                      borderColor: '#ccc',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      borderRadius: 10,
-                      height: 40,
-                      marginHorizontal: 5,
-                    }}>
-                    <Text
-                      allowFontScaling={false}
-                      style={{
-                        fontSize: hp(2.5),
-                        color: '#000',
-
-                        textAlign: 'center',
-                      }}>
-                      {fromTime
-                        ? fromTime
-                            .split(':')[1]
-                            .trim()
-                            .split(
-                              fromTime.split(':')[1].trim().includes('PM')
-                                ? 'PM'
-                                : 'AM',
-                            )
-                        : '00'}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-            {toTime || fromTime ? (
-              <Text
-                allowFontScaling={false}
-                style={{
-                  fontSize: hp(2.3),
-                  color: '#000',
-                  borderRadius: 10,
-                  marginTop: 30,
-                  textAlign: 'center',
-                }}>
-                {toTime} {''} to {''} {fromTime}
-              </Text>
-            ) : null}
-            <View
-              style={{
-                backgroundColor: '#ccc',
-                width: '75%',
-                height: '0.6%',
-                alignSelf: 'center',
-                marginTop: hp(2),
-                marginBottom: hp(3),
-              }}></View>
-
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-around',
-                marginBottom: 10,
-
-                // marginHorizontal: wp(6),
-              }}>
-              <TouchableOpacity
-                onPress={() => {
-                  if (item.toTime) {
-                    delete item.toTime;
-                    delete item.fromTime;
-                    setIsModalVisible(false);
-                  } else {
-                    setIsModalVisible(false);
-                  }
-                }}
-                style={{
-                  width: '40%',
-                  borderWidth: 2,
-                  borderColor: '#1C75BC',
-                  borderRadius: 10,
-                  backgroundColor: '#fff',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: 50,
-                }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: '#1C75BC',
-                    fontFamily: 'Poppins-SemiBold',
-                  }}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  if (switchValue) {
-                    if (fromTime && toTime) {
-                      const newArray = [...days];
-                      let selectedIds = [];
-                      newArray.map(item => {
-                        item.toTime = toTime;
-                        item.fromTime = fromTime;
-                        selectedIds.push(item.id);
-                      });
-                      setSelectedIds(selectedIds);
-
-                      setDays(newArray);
-                      setFromTime('');
-                      setToTime('');
-
-                      setIsModalVisible(false);
-                    } else {
-                      showMessage({
-                        message: 'Alert',
-                        description: 'Please select start and end time',
-                        type: 'danger',
-                      });
-                    }
-                  } else {
-                    if (fromTime && toTime) {
-                      const newArray = [...days];
-                      let objIndex = newArray.findIndex(
-                        obj => obj.id === item.id,
-                      );
-
-                      newArray[objIndex].toTime = toTime;
-                      newArray[objIndex].fromTime = fromTime;
-                      setDays(newArray);
-                      setFromTime('');
-                      setToTime('');
-                      // handleSelectionMultiple(item);
-                      setIsModalVisible(false);
-                    } else {
-                      showMessage({
-                        message: 'Alert',
-                        description: 'Please select start and end time',
-                        type: 'danger',
-                      });
-                    }
-                  }
-                }}
-                style={{
-                  width: '40%',
-                  borderWidth: 2,
-                  borderColor: '#1C75BC',
-                  borderRadius: 10,
-                  backgroundColor: '#1C75BC',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: 50,
-                }}>
-                <Text
-                  style={{
-                    fontSize: 16,
                     color: '#fff',
+                    textAlign: 'center',
+                    paddingVertical: hp(2),
                     fontFamily: 'Poppins-SemiBold',
                   }}>
-                  Add
+                  {'Working Hours For'} {item.name}
                 </Text>
-              </TouchableOpacity>
-            </View>
-            <View style={{flexDirection: 'row', marginVertical: hp(2)}}></View>
-            <DateTimePickerModal
-              isVisible={isDatePickerVisible}
-              mode="time"
-              onConfirm={handleConfirm}
-              date={moment('2000-01-01T20:00:00').toDate()}
-              onCancel={hideDatePicker}
-            />
-          </View>
-        </Modal>
+              </View>
+              <View style={styles.viewModal}>
+                <View
+                  style={{
+                    paddingBottom: hp(2),
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                  }}>
+                  <View />
+                  <View style={{flexDirection: 'row', marginVertical: 10}}>
+                    <Text
+                      allowFontScaling={false}
+                      style={{
+                        fontSize: hp(2),
+                        color: '#000',
+                        fontFamily: 'Poppins-Regular',
+                        marginHorizontal: 10,
+                      }}>
+                      {'Do this for all days'}
+                    </Text>
+                    <SwitchWithIcons
+                      // icon = {
+                      //   {  true: on,
+                      //     false: "",}
+                      //   }
+                      trackColor={{false: '#EBEBEB', true: '#C8CFF6'}}
+                      thumbColor={{false: '#FFFFFF', true: '#1C75BC'}}
+                      //  thumbColor="white"
+                      value={switchValue}
+                      onValueChange={() => setSwitchValue(!switchValue)}
+                    />
+                  </View>
+                </View>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}>
+                  <View style={{flexDirection: 'row'}}>
+                    <TouchableOpacity
+                      onPress={() => showDatePicker('to')}
+                      style={{alignSelf: 'center', flexDirection: 'row'}}>
+                      <View
+                        style={{
+                          width: 40,
+                          borderWidth: 1,
+                          borderColor: '#ccc',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          borderRadius: 10,
+                          height: 40,
+                          marginHorizontal: 5,
+                        }}>
+                        <Text
+                          allowFontScaling={false}
+                          style={{
+                            fontSize: hp(2.5),
+                            color: '#000',
 
-        <Modal isVisible={addLicense}>
-          <View
-            style={{
-              backgroundColor: '#1C75BC',
-              width: '100%',
-              borderWidth: 0,
-              borderTopRightRadius: hp(2),
-              borderTopLeftRadius: hp(2),
-              borderColor: ' #1C75BC',
-            }}>
-            <Text
-              allowFontScaling={false}
-              style={{
-                fontSize: hp(2.5),
-                color: '#fff',
-                textAlign: 'center',
-                paddingVertical: hp(2),
-                fontFamily: 'Poppins-SemiBold',
-              }}>
-              Add new license
-            </Text>
-          </View>
-          <View style={[styles.viewModal, {paddingHorizontal: 0}]}>
-            <View
-              style={{
-                marginHorizontal: 10,
-                marginVertical: 10,
+                            textAlign: 'center',
+                          }}>
+                          {toTime ? toTime.split(':')[0].trim() : '00'}
+                        </Text>
+                      </View>
+                      <View
+                        style={{
+                          width: 40,
+                          borderWidth: 1,
+                          borderColor: '#ccc',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          height: 40,
+                          borderRadius: 10,
+                          marginHorizontal: 5,
+                        }}>
+                        <Text
+                          allowFontScaling={false}
+                          style={{
+                            fontSize: hp(2.5),
+                            color: '#000',
 
-                // zIndex: Platform.OS === 'ios' ? 10 : null,
-                zIndex: Platform.OS === 'ios' ? 10 : 100,
-              }}>
-              <Text
-                allowFontScaling={false}
+                            textAlign: 'center',
+                          }}>
+                          {toTime
+                            ? toTime
+                                .split(':')[1]
+                                .trim()
+                                .split(
+                                  toTime.split(':')[1].trim().includes('PM')
+                                    ? 'PM'
+                                    : 'AM',
+                                )
+                            : '00'}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                  <View>
+                    <Text
+                      allowFontScaling={false}
+                      style={{
+                        fontSize: hp(2.5),
+                        color: '#000',
+                        fontFamily: 'Poppins-SemiBold',
+                      }}>
+                      to
+                    </Text>
+                  </View>
+                  <View style={{flexDirection: 'row'}}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (toTime.length) {
+                          showDatePicker('from');
+                        } else {
+                          showMessage({
+                            message: 'Alert',
+                            description: 'Please select the start time first.',
+                            type: 'danger',
+                          });
+                        }
+                      }}
+                      style={{alignSelf: 'center', flexDirection: 'row'}}>
+                      <View
+                        style={{
+                          width: 40,
+                          borderWidth: 1,
+                          borderColor: '#ccc',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          borderRadius: 10,
+                          height: 40,
+                          marginHorizontal: 5,
+                        }}>
+                        <Text
+                          allowFontScaling={false}
+                          style={{
+                            fontSize: hp(2.5),
+                            color: '#000',
+
+                            textAlign: 'center',
+                          }}>
+                          {fromTime ? fromTime.split(':')[0].trim() : '00'}
+                        </Text>
+                      </View>
+                      <View
+                        style={{
+                          width: 40,
+                          borderWidth: 1,
+                          borderColor: '#ccc',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          borderRadius: 10,
+                          height: 40,
+                          marginHorizontal: 5,
+                        }}>
+                        <Text
+                          allowFontScaling={false}
+                          style={{
+                            fontSize: hp(2.5),
+                            color: '#000',
+
+                            textAlign: 'center',
+                          }}>
+                          {fromTime
+                            ? fromTime
+                                .split(':')[1]
+                                .trim()
+                                .split(
+                                  fromTime.split(':')[1].trim().includes('PM')
+                                    ? 'PM'
+                                    : 'AM',
+                                )
+                            : '00'}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                {toTime || fromTime ? (
+                  <Text
+                    allowFontScaling={false}
+                    style={{
+                      fontSize: hp(2.3),
+                      color: '#000',
+                      borderRadius: 10,
+                      marginTop: 30,
+                      textAlign: 'center',
+                    }}>
+                    {toTime} {''} to {''} {fromTime}
+                  </Text>
+                ) : null}
+                <View
+                  style={{
+                    backgroundColor: '#ccc',
+                    width: '75%',
+                    height: '0.6%',
+                    alignSelf: 'center',
+                    marginTop: hp(2),
+                    marginBottom: hp(3),
+                  }}></View>
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-around',
+                    marginBottom: 10,
+
+                    // marginHorizontal: wp(6),
+                  }}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (item.toTime) {
+                        delete item.toTime;
+                        delete item.fromTime;
+                        setIsModalVisible(false);
+                      } else {
+                        setIsModalVisible(false);
+                      }
+                    }}
+                    style={{
+                      width: '40%',
+                      borderWidth: 2,
+                      borderColor: '#1C75BC',
+                      borderRadius: 10,
+                      backgroundColor: '#fff',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: 50,
+                    }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        color: '#1C75BC',
+                        fontFamily: 'Poppins-SemiBold',
+                      }}>
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (switchValue) {
+                        if (fromTime && toTime) {
+                          const newArray = [...days];
+                          let selectedIds = [];
+                          newArray.map(item => {
+                            item.toTime = toTime;
+                            item.fromTime = fromTime;
+                            selectedIds.push(item.id);
+                          });
+                          setSelectedIds(selectedIds);
+
+                          setDays(newArray);
+                          setFromTime('');
+                          setToTime('');
+
+                          setIsModalVisible(false);
+                        } else {
+                          showMessage({
+                            message: 'Alert',
+                            description: 'Please select start and end time',
+                            type: 'danger',
+                          });
+                        }
+                      } else {
+                        if (fromTime && toTime) {
+                          const newArray = [...days];
+                          let objIndex = newArray.findIndex(
+                            obj => obj.id === item.id,
+                          );
+
+                          newArray[objIndex].toTime = toTime;
+                          newArray[objIndex].fromTime = fromTime;
+                          setDays(newArray);
+                          setFromTime('');
+                          setToTime('');
+                          // handleSelectionMultiple(item);
+                          setIsModalVisible(false);
+                        } else {
+                          showMessage({
+                            message: 'Alert',
+                            description: 'Please select start and end time',
+                            type: 'danger',
+                          });
+                        }
+                      }
+                    }}
+                    style={{
+                      width: '40%',
+                      borderWidth: 2,
+                      borderColor: '#1C75BC',
+                      borderRadius: 10,
+                      backgroundColor: '#1C75BC',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: 50,
+                    }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        color: '#fff',
+                        fontFamily: 'Poppins-SemiBold',
+                      }}>
+                      Add
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View
+                  style={{flexDirection: 'row', marginVertical: hp(2)}}></View>
+                <DateTimePickerModal
+                  isVisible={isDatePickerVisible}
+                  mode="time"
+                  onConfirm={handleConfirm}
+                  date={moment('2000-01-01T20:00:00').toDate()}
+                  onCancel={hideDatePicker}
+                />
+              </View>
+            </Modal>
+
+            <Modal isVisible={addLicense}>
+              <View
                 style={{
-                  fontSize: hp(1.8),
-                  color: '#000',
-                  fontFamily: 'Poppins-Regular',
-
-                  marginBottom: 10,
+                  backgroundColor: '#1C75BC',
+                  width: '100%',
+                  borderWidth: 0,
+                  borderTopRightRadius: hp(2),
+                  borderTopLeftRadius: hp(2),
+                  borderColor: ' #1C75BC',
                 }}>
-                {'License Type'}
-              </Text>
+                <Text
+                  allowFontScaling={false}
+                  style={{
+                    fontSize: hp(2.5),
+                    color: '#fff',
+                    textAlign: 'center',
+                    paddingVertical: hp(2),
+                    fontFamily: 'Poppins-SemiBold',
+                  }}>
+                  Add new license
+                </Text>
+              </View>
+              <View style={[styles.viewModal, {paddingHorizontal: 0}]}>
+                <View
+                  style={{
+                    marginHorizontal: 10,
+                    marginVertical: 10,
 
-              <DropDownPicker
-                dropDownDirection="TOP"
-                style={{borderColor: '#E4E4E4', fontFamily: 'Poppins-Regular'}}
-                placeholder="Select Type"
-                placeholderStyle={{fontFamily: 'Poppins-Regular'}}
-                open={open}
-                value={value}
-                items={items}
-                setOpen={setOpen}
-                setValue={setValue}
-                setItems={setItems}
-              />
-            </View>
-            {/* {typeError.length ? (
+                    // zIndex: Platform.OS === 'ios' ? 10 : null,
+                    zIndex: Platform.OS === 'ios' ? 10 : 100,
+                  }}>
+                  <Text
+                    allowFontScaling={false}
+                    style={{
+                      fontSize: hp(1.8),
+                      color: '#000',
+                      fontFamily: 'Poppins-Regular',
+
+                      marginBottom: 10,
+                    }}>
+                    {'License Type'}
+                  </Text>
+
+                  <DropDownPicker
+                    dropDownDirection="TOP"
+                    style={{
+                      borderColor: '#E4E4E4',
+                      fontFamily: 'Poppins-Regular',
+                    }}
+                    placeholder="Select Type"
+                    placeholderStyle={{fontFamily: 'Poppins-Regular'}}
+                    open={open}
+                    value={value}
+                    items={items}
+                    setOpen={setOpen}
+                    setValue={setValue}
+                    setItems={setItems}
+                  />
+                </View>
+                {/* {typeError.length ? (
             <Text
               allowFontScaling={false}
               style={{
@@ -1155,128 +1545,133 @@ const ProfileScreen = ({navigation}) => {
             </Text>
           ) : null} */}
 
-            <View
-              style={{
-                marginHorizontal: 10,
-                marginVertical: 10,
-
-                // zIndex: Platform.OS === 'ios' ? 10 : null,
-                zIndex: Platform.OS === 'ios' ? 10 : 100,
-              }}>
-              <Text
-                allowFontScaling={false}
-                style={{
-                  fontSize: hp(1.8),
-                  color: '#000',
-                  fontFamily: 'Poppins-Regular',
-
-                  marginBottom: 10,
-                }}>
-                {'State'}
-              </Text>
-
-              <DropDownPicker
-                dropDownDirection="BOTTOM"
-                style={{borderColor: '#E4E4E4', fontFamily: 'Poppins-Regular'}}
-                placeholder="Select Type"
-                placeholderStyle={{fontFamily: 'Poppins-Regular'}}
-                open={open1}
-                value={value1}
-                items={items1}
-                setOpen={setOpen1}
-                setValue={setValue1}
-                setItems={setItems1}
-              />
-            </View>
-
-            <View
-              style={{
-                marginVertical: 10,
-              }}>
-              <CustomInput label={'Number'} />
-
-              <TouchableOpacity
-                onPress={() => {
-                  // let newPin = `${Generate()}`;
-                  // setPin(newPin);
-                }}>
-                <Text
-                  allowFontScaling={false}
+                <View
                   style={{
-                    marginHorizontal: 15,
-                    fontFamily: 'Poppins-Bold',
-                    textDecorationLine: 'underline',
-                    color: '#1C75BC',
+                    marginHorizontal: 10,
+                    marginVertical: 10,
+
+                    // zIndex: Platform.OS === 'ios' ? 10 : null,
+                    zIndex: Platform.OS === 'ios' ? 10 : 100,
                   }}>
-                  Generate
-                </Text>
-              </TouchableOpacity>
-            </View>
+                  <Text
+                    allowFontScaling={false}
+                    style={{
+                      fontSize: hp(1.8),
+                      color: '#000',
+                      fontFamily: 'Poppins-Regular',
 
-            <View
-              style={{
-                backgroundColor: '#ccc',
-                width: '75%',
-                height: '0.6%',
-                alignSelf: 'center',
-                marginTop: hp(2),
-                marginBottom: hp(3),
-              }}></View>
+                      marginBottom: 10,
+                    }}>
+                    {'State'}
+                  </Text>
 
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-around',
-                marginBottom: 10,
+                  <DropDownPicker
+                    dropDownDirection="BOTTOM"
+                    style={{
+                      borderColor: '#E4E4E4',
+                      fontFamily: 'Poppins-Regular',
+                    }}
+                    placeholder="Select Type"
+                    placeholderStyle={{fontFamily: 'Poppins-Regular'}}
+                    open={open1}
+                    value={value1}
+                    items={items1}
+                    setOpen={setOpen1}
+                    setValue={setValue1}
+                    setItems={setItems1}
+                  />
+                </View>
 
-                // marginHorizontal: wp(6),
-              }}>
-              <TouchableOpacity
-                onPress={() => {
-                  setAddLicense(false);
-                }}
-                style={{
-                  width: '40%',
-                  borderWidth: 2,
-                  borderColor: '#1C75BC',
-                  borderRadius: 10,
-                  backgroundColor: '#fff',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: 50,
-                }}>
-                <Text
+                <View
                   style={{
-                    fontSize: 16,
-                    color: '#1C75BC',
-                    fontFamily: 'Poppins-SemiBold',
+                    marginVertical: 10,
                   }}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{
-                  width: '40%',
-                  borderWidth: 2,
-                  borderColor: '#1C75BC',
-                  borderRadius: 10,
-                  backgroundColor: '#1C75BC',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: 50,
-                }}>
-                <Text
+                  <CustomInput label={'Number'} />
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      // let newPin = `${Generate()}`;
+                      // setPin(newPin);
+                    }}>
+                    <Text
+                      allowFontScaling={false}
+                      style={{
+                        marginHorizontal: 15,
+                        fontFamily: 'Poppins-Bold',
+                        textDecorationLine: 'underline',
+                        color: '#1C75BC',
+                      }}>
+                      Generate
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View
                   style={{
-                    fontSize: 16,
-                    color: '#fff',
-                    fontFamily: 'Poppins-SemiBold',
+                    backgroundColor: '#ccc',
+                    width: '75%',
+                    height: '0.6%',
+                    alignSelf: 'center',
+                    marginTop: hp(2),
+                    marginBottom: hp(3),
+                  }}></View>
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-around',
+                    marginBottom: 10,
+
+                    // marginHorizontal: wp(6),
                   }}>
-                  Add
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setAddLicense(false);
+                    }}
+                    style={{
+                      width: '40%',
+                      borderWidth: 2,
+                      borderColor: '#1C75BC',
+                      borderRadius: 10,
+                      backgroundColor: '#fff',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: 50,
+                    }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        color: '#1C75BC',
+                        fontFamily: 'Poppins-SemiBold',
+                      }}>
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{
+                      width: '40%',
+                      borderWidth: 2,
+                      borderColor: '#1C75BC',
+                      borderRadius: 10,
+                      backgroundColor: '#1C75BC',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: 50,
+                    }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        color: '#fff',
+                        fontFamily: 'Poppins-SemiBold',
+                      }}>
+                      Add
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+          </>
+        )}
       </Layout>
     </BottomSheetModalProvider>
   );
@@ -1414,14 +1809,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: 'grey',
     fontFamily: 'Poppins-SemiBold',
-    width: 80,
+
     marginVertical: 3,
+    marginHorizontal: 5,
   },
   subHeading: {
     fontSize: 14,
     color: 'grey',
     fontFamily: 'Poppins-Regular',
-    marginHorizontal: 10,
+    marginHorizontal: 3,
+  },
+  nobeContainer: {
+    backgroundColor: 'white',
+    borderWidth: 2,
+    height: 25,
+    width: 25,
+    borderRadius: 25,
+    borderColor: '#1C75BC',
   },
 });
 
