@@ -23,6 +23,7 @@ import Profile from '../../Screens/Profile';
 const Tab = createBottomTabNavigator();
 
 const Tabs = () => {
+  const user = useSelector(state => state.Reducer.user);
   return (
     <Tab.Navigator
       screenOptions={{
@@ -44,7 +45,7 @@ const Tabs = () => {
       }}>
       <Tab.Screen
         name={'Home'}
-        component={Dashboard}
+        component={user.type === 'pro' ? Reservations : Dashboard}
         options={{
           tabBarAllowFontScaling: false,
           tabBarIcon: ({focused}) => (
@@ -62,27 +63,30 @@ const Tabs = () => {
           ),
         }}
       />
-      <Tab.Screen
-        name={'Reservations'}
-        component={Reservations}
-        options={{
-          tabBarAllowFontScaling: false,
-          tabBarIcon: ({focused}) => (
-            <View
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-              <Fav
-                size={25}
-                name="emoji-people"
-                color={focused ? '#1C75BC' : '#ccc'}
-                style={{position: 'absolute'}}
-              />
-            </View>
-          ),
-        }}
-      />
+
+      {user.type != 'pro' && (
+        <Tab.Screen
+          name={'Reservations'}
+          component={Reservations}
+          options={{
+            tabBarAllowFontScaling: false,
+            tabBarIcon: ({focused}) => (
+              <View
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <Fav
+                  size={25}
+                  name="emoji-people"
+                  color={focused ? '#1C75BC' : '#ccc'}
+                  style={{position: 'absolute'}}
+                />
+              </View>
+            ),
+          }}
+        />
+      )}
 
       <Tab.Screen
         name={'Profile'}

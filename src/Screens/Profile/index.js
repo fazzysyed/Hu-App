@@ -11,6 +11,7 @@ import {
   Dimensions,
   Alert,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import mime from 'mime';
 import CustomLabel from '../../components/Label';
@@ -26,6 +27,7 @@ import License from 'react-native-vector-icons/FontAwesome';
 
 import moment from 'moment';
 import {showMessage, hideMessage} from 'react-native-flash-message';
+import {useFocusEffect} from '@react-navigation/native';
 
 import Enc from 'react-native-vector-icons/Entypo';
 import Modal from 'react-native-modal';
@@ -53,6 +55,8 @@ import {getCurrentDate} from '../../Helper/GetCurrentDate';
 import {handleAPIRequest} from '../../Helper/ApiHandler';
 import {validatePassword} from '../../Helper/Vilidator';
 import {useSelector} from 'react-redux';
+import AnimatedLoader from '../../components/Loader';
+import axios from 'axios';
 const width = Dimensions.get('window').width;
 
 const licenseData = [
@@ -76,6 +80,7 @@ const ProfileScreen = ({navigation}) => {
   const [switchValue, setSwitchValue] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const user = useSelector(state => state.Reducer.user);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const [licenses, setLicenses] = useState(licenseData);
 
@@ -117,6 +122,7 @@ const ProfileScreen = ({navigation}) => {
     url: '',
     about: '',
     public_phone: '',
+    bus_logo: '',
   });
   const [fromTime, setFromTime] = useState('');
   const [whichtime, setWhichtime] = useState('');
@@ -125,7 +131,8 @@ const ProfileScreen = ({navigation}) => {
   const [notification, setNotifications] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [profileImage, setProfileImage] = useState('');
-
+  const [loading, setLoading] = useState(false);
+  const [businessLoading, setBusinessLoading] = useState(false);
   const bottomSheetModalRef = useRef(null);
 
   // variables
@@ -191,34 +198,69 @@ const ProfileScreen = ({navigation}) => {
     </View>
   );
 
-  useEffect(() => {
-    handleAPIRequest('get', `user`, null)
-      .then(response => {
-        if (response) {
-          // dispatch(getAllPros(response));
-          setUserProfile(response.user.profile);
+  const businessProfileHandler = () => {
+    setLoading(true);
+    handleAPIRequest('post', `bus-profile`, {
+      company_name: business.name,
+      about: business.about,
+      website_url: business.url,
+      public_phone: business.public_phone,
+    }).then(response => {
+      if (response === 'success') {
+        setLoading(false);
+        showMessage({
+          message: 'Success',
+          description: 'Business profile updated successfully',
+          type: 'success',
+        });
+      }
+      setLoading(false);
+    });
+  };
 
-          setDays(
-            response.user.profile.pro_profile
-              ? response.user.profile.pro_profile.working_hours
-              : days,
-          );
-          setPreferences({
-            radius: response.user.profile.pro_profile.radius.toString(),
-            hourly_rate:
-              response.user.profile.pro_profile.hourly_rate.toString(),
-            daily_rate: response.user.profile.pro_profile.daily_rate.toString(),
-          });
+  useFocusEffect(
+    React.useCallback(() => {
+      setLoading(true);
+      handleAPIRequest('get', `user`, null)
+        .then(response => {
+          if (response) {
+            // dispatch(getAllPros(response));
+            setUserProfile(response.user.profile);
 
-          console.warn(response.user, 'Changetoapp');
+            if (response.user.profile.type === 'pro') {
+              setDays(
+                response.user.profile.pro_profile
+                  ? response.user.profile.pro_profile.working_hours
+                  : days,
+              );
+              setPreferences({
+                radius: response.user.profile.pro_profile.radius.toString(),
+                hourly_rate:
+                  response.user.profile.pro_profile.hourly_rate.toString(),
+                daily_rate:
+                  response.user.profile.pro_profile.daily_rate.toString(),
+              });
+            } else {
+              setBusiness({
+                name: response.user.profile.bus_profile.company_name,
+                url: response.user.profile.bus_profile.website_url,
+                about: response.user.profile.bus_profile.about,
+                public_phone: response.user.profile.bus_profile.public_phone,
+                bus_logo: response.user.profile.bus_profile.logo_url,
+              });
+            }
 
-          // AsyncStorage.setItem('User', JSON.stringify(response.user));
-        }
-      })
-      .catch(e => {
-        console.log(e);
-      });
-  }, []);
+            setLoading(false);
+
+            // AsyncStorage.setItem('User', JSON.stringify(response.user));
+          }
+        })
+        .catch(e => {
+          console.log(e);
+          setLoading(false);
+        });
+    }, []),
+  );
 
   const itemHandler = item => {
     setItem(item);
@@ -316,6 +358,7 @@ const ProfileScreen = ({navigation}) => {
   }, [confirmPassword]);
 
   const updateProfile = () => {
+    setLoading(true);
     handleAPIRequest(
       'put',
       `user`,
@@ -338,7 +381,7 @@ const ProfileScreen = ({navigation}) => {
           console.warn(response);
           // setUserProfile(response.data);
           // dispatch(getAllPros(response));
-          Alert.alert('Done');
+          setLoading(false);
 
           // AsyncStorage.setItem('User', JSON.stringify(response.user));
         }
@@ -348,54 +391,137 @@ const ProfileScreen = ({navigation}) => {
       });
   };
 
-  const handleProfileImage = () => {
-    console.warn(user.token);
-    launchImageLibrary({noData: true, quality: 0.8}, response => {
+  const handleProfileImage = async () => {
+    launchImageLibrary({noData: true, quality: 0.2}, async response => {
       if (response.didCancel) {
         console.log('Image picker cancelled');
       } else if (response.error) {
         console.log('Image picker error:', response.error);
       } else {
-        const imagenew = {
-          uri: response.assets[0].uri,
-          width: response.assets[0].width,
-          height: response.assets[0].height,
-          fileName: response.assets[0].fileName,
-          type: response.assets[0].type,
-        };
-
+        setProfileLoading(true);
         setProfileImage(response.assets[0].uri);
 
+        const uri =
+          Platform.OS === 'android'
+            ? response.assets[0].uri
+            : response.assets[0].uri.replace('file://', '');
+        const filename = response.assets[0].uri.split('/').pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const ext = match?.[1];
+        const type = match ? `image/${match[1]}` : `image`;
         const formData = new FormData();
         formData.append('image', {
-          uri:
-            Platform.OS === 'android'
-              ? response.assets[0].uri
-              : response.assets[0].uri.replace('file://', ''),
-          type: mime.getType(response.assets[0].uri),
-          name: response.assets[0].fileName,
+          uri,
+          name: `image.${ext}`,
+          type,
         });
+        try {
+          const {data} = await axios.post(
+            `https://app.healthcare-up.com/api/v1/user-photo`,
+            formData,
+            {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+                Authorization: `Bearer ${user.token}`,
+              },
+            },
+          );
+          if (!data.isSuccess) {
+            setProfileLoading(false);
+            showMessage({
+              message: 'Alert',
+              description: 'Image not uploaded.',
+              type: 'danger',
+            });
 
-        var requestOptions = {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Content-Type': 'multipart/form-data;',
-            Authorization: `Bearer ${user.token}`,
-          },
-        };
-        fetch('https://app.healthcare-up.com/api/v1/user-photo', requestOptions)
-          .then(response => response.text())
-          .then(response => {
-            console.log(response);
-          })
-          .catch(e => {
-            console.log(e, 'Fazzysye');
+            return;
+          }
+          setProfileLoading(false);
+          showMessage({
+            message: 'success',
+            description: 'profile picture updated',
+            type: 'success',
           });
+        } catch (err) {
+          console.log(err);
+          showMessage({
+            message: 'Alert',
+            description: 'Image not uploaded.',
+            type: 'danger',
+          });
+          setProfileLoading(false);
+        } finally {
+          // setSelectedImage(undefined);
+        }
       }
     });
   };
 
+  const handleBusinessProfile = () => {
+    launchImageLibrary({noData: true, quality: 0.2}, async response => {
+      if (response.didCancel) {
+        console.log('Image picker cancelled');
+      } else if (response.error) {
+        console.log('Image picker error:', response.error);
+      } else {
+        setBusinessLoading(true);
+
+        const uri =
+          Platform.OS === 'android'
+            ? response.assets[0].uri
+            : response.assets[0].uri.replace('file://', '');
+        const filename = response.assets[0].uri.split('/').pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const ext = match?.[1];
+        const type = match ? `image/${match[1]}` : `image`;
+        const formData = new FormData();
+        formData.append('image', {
+          uri,
+          name: `image.${ext}`,
+          type,
+        });
+        try {
+          const {data} = await axios.post(
+            `https://app.healthcare-up.com/api/v1/bus-logo`,
+            formData,
+            {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+                Authorization: `Bearer ${user.token}`,
+              },
+            },
+          );
+          if (!data.isSuccess) {
+            setBusinessLoading(false);
+            showMessage({
+              message: 'Alert',
+              description: 'Image not uploaded.',
+              type: 'danger',
+            });
+
+            return;
+          }
+          setBusiness({...business, bus_logo: data.url});
+          setBusinessLoading(false);
+          showMessage({
+            message: 'Success',
+            description: 'Image uploaded successfully.',
+            type: 'success',
+          });
+        } catch (err) {
+          console.log(err);
+          showMessage({
+            message: 'Alert',
+            description: 'Image not uploaded.',
+            type: 'danger',
+          });
+          setBusinessLoading(false);
+        } finally {
+          // setSelectedImage(undefined);
+        }
+      }
+    });
+  };
   const createAddress = () => {
     console.warn(address);
     handleAPIRequest('post', `address`, address)
@@ -435,7 +561,11 @@ const ProfileScreen = ({navigation}) => {
                   justifyContent: 'space-between',
                 }}>
                 <Image
-                  source={require('../../assets/images/placeholderimage.jpeg')}
+                  source={
+                    userProfile.photo_url
+                      ? {uri: userProfile.photo_url}
+                      : require('../../assets/images/placeholderimage.jpeg')
+                  }
                   style={{
                     width: 80,
                     height: 80,
@@ -610,14 +740,22 @@ const ProfileScreen = ({navigation}) => {
                         style={styles.editIconContainer}>
                         <Edit name="edit" size={17} style={styles.editIcon} />
                       </TouchableOpacity>
-                      <Image
-                        source={
-                          profileImage
-                            ? {uri: profileImage}
-                            : require('../../assets/images/pro.png')
-                        }
-                        style={[styles.profilePicture]}
-                      />
+                      {profileLoading ? (
+                        <ActivityIndicator
+                          style={styles.loader}
+                          size="small"
+                          color="#000000"
+                        />
+                      ) : (
+                        <Image
+                          source={
+                            profileImage
+                              ? {uri: profileImage}
+                              : require('../../assets/images/pro.png')
+                          }
+                          style={styles.profilePicture}
+                        />
+                      )}
                     </View>
                   </View>
 
@@ -671,13 +809,27 @@ const ProfileScreen = ({navigation}) => {
                         justifyContent: 'center',
                       }}>
                       <View style={styles.imageContainer}>
-                        <TouchableOpacity style={styles.editIconContainer}>
+                        <TouchableOpacity
+                          onPress={handleBusinessProfile}
+                          style={styles.editIconContainer}>
                           <Edit name="edit" size={17} style={styles.editIcon} />
                         </TouchableOpacity>
-                        <Image
-                          source={require('../../assets/images/pro.png')}
-                          style={[styles.profilePicture]}
-                        />
+                        {businessLoading ? (
+                          <ActivityIndicator
+                            style={styles.loader}
+                            size="small"
+                            color="#000000"
+                          />
+                        ) : (
+                          <Image
+                            source={
+                              business.bus_logo
+                                ? {uri: business.bus_logo}
+                                : require('../../assets/images/pro.png')
+                            }
+                            style={styles.profilePicture}
+                          />
+                        )}
                       </View>
                     </View>
 
@@ -699,6 +851,7 @@ const ProfileScreen = ({navigation}) => {
 
                     <CustomInput
                       label={'Public Phone'}
+                      keyboardType={'number-pad'}
                       value={business.public_phone}
                       onChangeText={text =>
                         setBusiness({...business, public_phone: text})
@@ -712,7 +865,7 @@ const ProfileScreen = ({navigation}) => {
                       }
                     />
 
-                    <Button title={'Update'} />
+                    <Button title={'Update'} onPress={businessProfileHandler} />
                     <View style={{height: 120}} />
                   </ScrollView>
                 )}
@@ -1673,6 +1826,7 @@ const ProfileScreen = ({navigation}) => {
           </>
         )}
       </Layout>
+      {loading && <AnimatedLoader />}
     </BottomSheetModalProvider>
   );
 };

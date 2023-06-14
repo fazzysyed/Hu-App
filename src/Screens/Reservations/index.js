@@ -17,20 +17,27 @@ import moment from 'moment';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {handleAPIRequest} from '../../Helper/ApiHandler';
 import Button from '../../components/Button';
+import Empty from '../../components/Empty';
+import Animated from 'react-native-reanimated';
+import AnimatedLoader from '../../components/Loader';
 
 const Reservations = ({navigation}) => {
   const [reservations, setReservartions] = useState([]);
   const [note, setNote] = useState('');
   const [modal, setModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
+      setLoading(true);
+
       handleAPIRequest('get', 'reservation', null)
         .then(response => {
           if (response) {
             console.log(response.data);
             setReservartions(response.data);
+            setLoading(false);
             // console.warn(response);
 
             // AsyncStorage.setItem('User', JSON.stringify(response.user));
@@ -38,6 +45,7 @@ const Reservations = ({navigation}) => {
         })
         .catch(e => {
           console.log(e, 'Error');
+          setLoading(false);
         });
     }, []),
   );
@@ -110,7 +118,11 @@ const Reservations = ({navigation}) => {
         {item.offered_by_me ? (
           <View style={styles.innerContainer}>
             <Image
-              source={require('../../assets/images/placeholderimage.jpeg')}
+              source={
+                item.offered_to.photo_url
+                  ? {uri: item.offered_to.photo_url}
+                  : require('../../assets/images/placeholderimage.jpeg')
+              }
               style={styles.image}
             />
             <View>
@@ -126,7 +138,11 @@ const Reservations = ({navigation}) => {
         ) : (
           <View style={styles.innerContainer}>
             <Image
-              source={require('../../assets/images/placeholderimage.jpeg')}
+              source={
+                item.offered_by.photo_url
+                  ? {uri: item.offered_by.photo_url}
+                  : require('../../assets/images/placeholderimage.jpeg')
+              }
               style={styles.image}
             />
             <View>
@@ -251,25 +267,34 @@ const Reservations = ({navigation}) => {
     </View>
   );
   return (
-    <Layout>
-      <Text style={styles.reservations}>My Reservations</Text>
-      <FlatList
-        data={reservations}
-        renderItem={renderItem}
-        // keyExtractor={item => item.id.toString()}
-        contentContainerStyle={styles.container}
-      />
+    <>
+      <Layout>
+        {reservations.length ? (
+          <>
+            <Text style={styles.reservations}>My Reservations</Text>
+            <FlatList
+              data={reservations}
+              renderItem={renderItem}
+              // keyExtractor={item => item.id.toString()}
+              contentContainerStyle={styles.container}
+            />
+          </>
+        ) : (
+          <Empty title={'No reservation requests yet.'} />
+        )}
 
-      <ExtraTerms
-        isModalVisible={modal}
-        note={note}
-        setNote={text => setNote(text)}
-        onCancel={() => setModal(false)}
-        onSuccess={() => {
-          handleAccept();
-        }}
-      />
-    </Layout>
+        <ExtraTerms
+          isModalVisible={modal}
+          note={note}
+          setNote={text => setNote(text)}
+          onCancel={() => setModal(false)}
+          onSuccess={() => {
+            handleAccept();
+          }}
+        />
+      </Layout>
+      {loading && <AnimatedLoader />}
+    </>
   );
 };
 

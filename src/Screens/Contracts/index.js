@@ -16,24 +16,28 @@ import {handleAPIRequest} from '../../Helper/ApiHandler';
 import Material from 'react-native-vector-icons/MaterialCommunityIcons';
 import Button from '../../components/Button';
 import {useSelector} from 'react-redux';
+import AnimatedLoader from '../../components/Loader';
 
 const Contracts = ({navigation}) => {
   const [reservations, setReservartions] = useState([]);
   const user = useSelector(state => state.Reducer.user);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
     handleAPIRequest('get', 'contract', null)
       .then(response => {
         if (response) {
           console.log(response.data);
           setReservartions(response.data.contracts);
+          setLoading(false);
           // console.warn(response);
 
           // AsyncStorage.setItem('User', JSON.stringify(response.user));
         }
       })
       .catch(e => {
-        console.log(e, 'Error');
+        setLoading(false);
       });
   }, []);
 
@@ -119,11 +123,19 @@ const Contracts = ({navigation}) => {
 
         <View style={styles.innerContainer}>
           <Image
-            source={require('../../assets/images/placeholderimage.jpeg')}
+            source={
+              item.business.photo_url
+                ? {uri: item.business.photo_url}
+                : require('../../assets/images/placeholderimage.jpeg')
+            }
             style={styles.image}
           />
           <Image
-            source={require('../../assets/images/placeholderimage.jpeg')}
+            source={
+              item.pro.photo_url
+                ? {uri: item.pro.photo_url}
+                : require('../../assets/images/placeholderimage.jpeg')
+            }
             style={styles.image}
           />
         </View>
@@ -197,15 +209,18 @@ const Contracts = ({navigation}) => {
     );
   };
   return (
-    <Layout>
-      <Text style={styles.reservations}>My Contracts</Text>
-      <FlatList
-        data={reservations}
-        renderItem={renderItem}
-        // keyExtractor={item => item.id.toString()}
-        contentContainerStyle={styles.container}
-      />
-    </Layout>
+    <>
+      <Layout>
+        <Text style={styles.reservations}>My Contracts</Text>
+        <FlatList
+          data={reservations}
+          renderItem={renderItem}
+          // keyExtractor={item => item.id.toString()}
+          contentContainerStyle={styles.container}
+        />
+      </Layout>
+      {loading && <AnimatedLoader />}
+    </>
   );
 };
 

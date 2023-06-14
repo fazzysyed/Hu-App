@@ -29,6 +29,7 @@ const index = ({navigation}) => {
     handleAPIRequest('post', 'login', {email: email, password: password})
       .then(response => {
         if (response) {
+          console.log(response.user);
           dispatch(setUser(response.user));
           console.log(response.user);
           AsyncStorage.setItem('User', JSON.stringify(response.user));

@@ -5,11 +5,13 @@ import LottieView from 'lottie-react-native';
 const AnimatedLoader = () => {
   return (
     <View style={styles.container}>
-      <LottieView
-        source={require('../../assets/Animations/loader.json')}
-        style={styles.animation}
-        autoPlay
-      />
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <LottieView
+          source={require('../../assets/Animations/loader.json')}
+          style={styles.animation}
+          autoPlay
+        />
+      </View>
     </View>
   );
 };
@@ -18,8 +20,8 @@ export default AnimatedLoader;
 
 const styles = StyleSheet.create({
   animation: {
-    width: 200,
-    height: 200,
+    width: 150,
+    height: 150,
     opacity: 1,
   },
   container: {
